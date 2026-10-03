@@ -1,0 +1,149 @@
+.section {
+  position: relative;
+  padding-block: clamp(110px, 18vh, 200px);
+  overflow: clip;
+  border-top: 1px solid var(--line);
+}
+
+.watermark {
+  position: absolute;
+  right: -6vw;
+  top: 8%;
+  width: clamp(280px, 42vw, 640px);
+  opacity: 0.05;
+  background: var(--ink);
+  pointer-events: none;
+}
+
+.grid {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: clamp(40px, 6vh, 72px) clamp(20px, 3vw, 48px);
+}
+
+.lead {
+  grid-column: 1 / span 8;
+  display: grid;
+  gap: 28px;
+}
+
+.statement {
+  font-size: var(--step-4);
+}
+
+.lineMask {
+  display: block;
+  overflow: hidden;
+  padding-bottom: 0.08em;
+  margin-bottom: -0.08em;
+}
+
+.line {
+  display: block;
+}
+
+.body {
+  grid-column: 8 / span 5;
+  display: grid;
+  gap: 18px;
+  align-self: end;
+  color: var(--ink-soft);
+  max-width: 46ch;
+}
+
+.body strong {
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+}
+
+.credentials {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: clamp(16px, 2vw, 28px);
+  margin-top: clamp(24px, 5vh, 56px);
+  perspective: 1000px;
+}
+
+.tag {
+  --leather-base: var(--surface);
+  --leather-light: var(--surface-raised);
+  --leather-texture-opacity: 0.45;
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: clamp(20px, 3vw, 40px);
+  min-height: 200px;
+  padding: clamp(28px, 4vw, 52px);
+  border-radius: var(--radius-m);
+  box-shadow:
+    inset 0 1px 0 rgb(255 255 255 / 0.06),
+    0 24px 50px -30px rgb(var(--shadow-rgb) / 0.6);
+  overflow: hidden;
+}
+
+:root[data-theme='dark'] .tag {
+  --leather-base: #2a1d16;
+  --leather-light: #3d2a1f;
+}
+
+:root[data-theme='light'] .tag {
+  --leather-base: #c9a57f;
+  --leather-light: #dcbf9b;
+  --leather-texture-opacity: 0.28;
+  --leather-blend: overlay;
+  color: #2a1c14;
+}
+
+/* Debossed monogram pressed into the leather */
+.deboss {
+  width: clamp(64px, 7vw, 96px);
+  background: rgb(0 0 0 / 0.28);
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.12)) drop-shadow(0 -1px 0 rgb(0 0 0 / 0.4));
+}
+
+:root[data-theme='light'] .deboss {
+  background: rgb(60 35 20 / 0.32);
+  filter: drop-shadow(0 1px 0 rgb(255 240 220 / 0.45));
+}
+
+.tagText {
+  display: grid;
+  gap: 6px;
+}
+
+.tagLead,
+.tagUnit {
+  font-size: 0.7rem;
+  font-weight: 450;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  opacity: 0.78;
+}
+
+.tagValue {
+  font-size: var(--step-3);
+  line-height: 1.05;
+}
+
+.tagFigure {
+  font-size: var(--step-4);
+  line-height: 1;
+  letter-spacing: 0.02em;
+}
+
+@media (max-width: 900px) {
+  .lead,
+  .body {
+    grid-column: 1 / -1;
+  }
+  .credentials {
+    grid-template-columns: 1fr;
+  }
+  .tag {
+    min-height: 160px;
+  }
+}
