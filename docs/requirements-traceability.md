@@ -82,4 +82,65 @@ Audit that drove this edition: `docs/audit-2026-10.md`.
 
 All commands were run against `next build && next start` with Chromium (SwiftShader WebGL) and `.env.local` set to `ENQUIRY_STORE=file` plus local admin credentials.
 
-_Results for this edition are being recorded; this section is completed in the follow-up commit._
+| Check | Command | Result |
+|---|---|---|
+| Types | `npm run typecheck` | Pass |
+| Lint | `npm run lint` | Pass (0 errors, 0 warnings) |
+| Unit tests | `npm test` | **9/9 pass** (validation, phone normalisation, honeypot/timing traps, idempotency key format, rate limiter window) |
+| Build | `npm run build` | Pass |
+| Journeys + screenshots | `node scripts/qa-screens.mjs --mock-images` | Full matrix (desktop-dark, desktop-light, tablet-light, mobile-dark, mobile-light, desktop-light-reduced): **71 checks passed, 1 problem**. The problem (reduced motion: success panel under the header) was fixed, and the reduced-motion and mobile-dark profiles were re-run: **no problems**. See the coverage note below. |
+| Accessibility | `node scripts/qa-a11y.mjs --admin=…` | **0 violations** on 15 targets × 2 themes: every route, quick view, callback mode, sound panel, 404 and the admin page. axe-core WCAG 2.0/2.1/2.2 A+AA plus best practice, run with reduced motion so reveals are settled. |
+| API | `curl` against `next start` | Invalid → 400 with field errors · valid → 201 `EQ-…` · same idempotency key → 200 `duplicate` · honeypot → 400 `rejected` · cross-origin → 403 · form-encoded → 415 · GET → 405 · 6th request in 10 min (limit 5) → 429 with `Retry-After: 600` · no store/email configured → 503 `not_configured` · store file mode 600 |
+| Admin | `curl` | No credentials → 401 with `WWW-Authenticate` · wrong password → 401 · correct → 200 (`noindex`, `no-store`) · PATCH without credentials → 401 · PATCH with credentials → 200 |
+| Not-configured UI | Browser, server with `ENQUIRY_STORE=none` | The form says online requests aren't connected and that nothing was submitted, and offers a pre-filled email and the phone number. No success message or reference is shown. |
+| Headers | `curl -I /` | CSP, X-Frame-Options DENY, nosniff, Referrer-Policy, Permissions-Policy present |
+| Dependencies | `npm audit --omit=dev` | 0 vulnerabilities (runtime). Full audit: 5 high, all dev-only (`braces` via `eslint-config-next`). |
+
+**Journey coverage per profile:**
+- 9-route sweep (no horizontal overflow, exactly one h1, no console or page errors)
+- WebGL heat-stamp present
+- hero CTA → shop
+- quick view (keyboard open, URL sync, focus to close, ← →, Escape, focus return)
+- grid toggle
+- card → product page
+- gallery thumbnails and arrow keys
+- touch swipe (tablet and mobile, CDP touch events)
+- form validation with focus on the first invalid field
+- a real enquiry, cross-checked against the stored record (piece, count)
+- success panel fully in view
+- callback via `/contact?mode=callback&piece=no-01`, cross-checked against the stored record (E.164 phone, piece, window)
+- theme toggle and persistence
+- sound panel (ambience disabled while off, switches, volume, persistence, Escape)
+- mobile menu navigation
+- `?piece=` deep link
+
+**Coverage note:** the last fix changed only the non-smooth-scroll path (touch devices and reduced motion). Desktop profiles use Lenis and passed in the full run. Tablet-light and mobile-light passed in the full run before the fix and share the mobile-dark code path, which passed after it.
+
+**Page weight** (home / shop / product / contact, gzip, as transferred by 1.5s after `load`, including Next's link prefetches):
+- JS: 237 / 249 / 249 / 244 KB
+- CSS: 21 KB
+- HTML: 6–9 KB
+- fonts: 118–151 KB (self-hosted variable woff2)
+- textures and logo masks on home: 327 KB
+
+Product photos were blocked in this environment and are excluded. Lighthouse and Core Web Vitals were **not** measured.
+
+**Caveat:** `--mock-images` replaces Cloudinary responses with a grey "TEST IMAGE" card, because the environment can't reach Cloudinary. It verifies layout only; real image rendering, crops and colour pairing are unverified.
+
+**Not tested:**
+- real devices
+- Safari and Firefox (Chromium only)
+- a manual screen reader
+- 200% zoom
+- a Supabase store against a real project (none exists)
+- Resend email delivery (no credentials)
+
+Defects found and fixed during this edition's QA:
+- WAAPI crash from keyframe offsets outside [0, 1] (blank page)
+- white box around the stamp texture (sharp channel handling)
+- card stages missing (CSS module cascade)
+- shop view toggle timing out inside a view transition (replaced with a crossfade)
+- React Compiler purity errors in the form
+- mobile horizontal overflow on product and client-services pages (`minmax(0, 1fr)` grids)
+- the success panel landing under the fixed header
+- copy that overclaimed ("never retouched", invented callback hours)

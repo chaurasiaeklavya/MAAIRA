@@ -144,16 +144,17 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
 
   const scrollTo = useCallback(
     (target: string | HTMLElement | number) => {
+      // Elements land just below the fixed header, with or without Lenis.
+      const offset = typeof target === 'number' ? 0 : -96;
       const lenis = lenisRef.current;
       if (lenis) {
-        lenis.scrollTo(target, { offset: typeof target === 'number' ? 0 : -96, duration: 1.4 });
+        lenis.scrollTo(target, { offset, duration: 1.4 });
         return;
       }
-      if (typeof target === 'number') window.scrollTo({ top: target });
-      else {
-        const el = typeof target === 'string' ? document.querySelector(target) : target;
-        el?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' });
-      }
+      const el = typeof target === 'number' ? null : typeof target === 'string' ? document.querySelector(target) : target;
+      if (typeof target !== 'number' && !el) return;
+      const top = el ? window.scrollY + el.getBoundingClientRect().top + offset : (target as number);
+      window.scrollTo({ top, behavior: reducedMotion ? 'auto' : 'smooth' });
     },
     [reducedMotion],
   );
