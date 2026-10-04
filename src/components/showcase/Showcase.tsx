@@ -21,15 +21,27 @@ function subscribeUrl(cb: () => void) {
     window.removeEventListener(URL_EVENT, cb);
   };
 }
-const readPiece = () => new URLSearchParams(window.location.search).get(PARAM);
+/** Fallback when the History API is unavailable (e.g. the page is opened from file://). */
+let memoryPiece: string | null | undefined;
+const readPiece = () =>
+  memoryPiece !== undefined ? memoryPiece : new URLSearchParams(window.location.search).get(PARAM);
 const readPieceServer = () => null;
 
+/** Returns false when the URL could not be updated and in-memory state was used instead. */
 function writeUrl(slug: string | null, mode: 'push' | 'replace') {
-  const url = new URL(window.location.href);
-  if (slug) url.searchParams.set(PARAM, slug);
-  else url.searchParams.delete(PARAM);
-  window.history[mode === 'push' ? 'pushState' : 'replaceState']({ piece: slug }, '', url);
+  let ok = true;
+  try {
+    if (memoryPiece !== undefined) throw new Error('history unavailable');
+    const url = new URL(window.location.href);
+    if (slug) url.searchParams.set(PARAM, slug);
+    else url.searchParams.delete(PARAM);
+    window.history[mode === 'push' ? 'pushState' : 'replaceState']({ piece: slug }, '', url);
+  } catch {
+    memoryPiece = slug;
+    ok = false;
+  }
   window.dispatchEvent(new Event(URL_EVENT));
+  return ok;
 }
 
 export function Showcase() {
@@ -44,8 +56,7 @@ export function Showcase() {
     (slug: string, trigger: HTMLElement | null) => {
       triggerRef.current = trigger;
       setLayoutSlug(slug);
-      writeUrl(slug, 'push');
-      pushedRef.current = true;
+      pushedRef.current = writeUrl(slug, 'push');
       play('open');
     },
     [play],

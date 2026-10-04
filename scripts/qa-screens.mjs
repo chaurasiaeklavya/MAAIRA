@@ -139,7 +139,10 @@ async function run(vpName, theme, { reducedMotion = false } = {}) {
   await page.waitForTimeout(400);
   const before = await page.evaluate(() => document.documentElement.dataset.theme);
   await page.getByRole('button', { name: /Switch to (light|dark) theme/ }).click();
-  await page.waitForTimeout(900);
+  // The View Transition snapshot can take ~1s under CPU-emulated WebGL; wait for the change.
+  await page
+    .waitForFunction((b) => document.documentElement.dataset.theme !== b, before, { timeout: 3000 })
+    .catch(() => {});
   const after = await page.evaluate(() => [document.documentElement.dataset.theme, localStorage.getItem('maaira-theme')]);
   if (after[0] === before || after[1] !== after[0]) problems.push(`[${tag}] theme toggle failed: ${before} -> ${after}`);
   const sound = page.getByRole('button', { name: /turn interface sound/ });

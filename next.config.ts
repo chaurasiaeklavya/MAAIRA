@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next';
 
 const isProd = process.env.NODE_ENV === 'production';
+/** `STATIC_EXPORT=1` emits a static site in out/ (used for the single-file HTML build). */
+const isStaticExport = process.env.STATIC_EXPORT === '1';
 
 /**
  * Content Security Policy. Product imagery is delivered from Cloudinary;
@@ -32,9 +34,13 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  async headers() {
-    return [{ source: '/:path*', headers: securityHeaders }];
-  },
+  ...(isStaticExport
+    ? { output: 'export' as const }
+    : {
+        async headers() {
+          return [{ source: '/:path*', headers: securityHeaders }];
+        },
+      }),
 };
 
 export default nextConfig;

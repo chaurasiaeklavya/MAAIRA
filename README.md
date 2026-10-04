@@ -24,6 +24,8 @@ Requires Node 20+ (developed on Node 22).
 | `npm run assets:brand` | Regenerate logo masks, icons and leather textures from the original logo |
 | `npm run qa:screens` | Playwright journeys and screenshots (server must be running). Add `-- --mock-images` where Cloudinary is unreachable. |
 | `node scripts/qa-a11y.mjs` | axe-core WCAG A/AA audit, both themes, home page + dialog |
+| `npm run build:single` | One self-contained `dist/maaira-showcase.html` (see below) |
+| `npm run qa:single` | Tests that file opened from disk (`file://`) with networking blocked |
 
 Playwright scripts look for Chromium at `/opt/pw-browsers/chromium`. Change `executablePath` in the scripts if yours is elsewhere.
 
@@ -65,6 +67,12 @@ docs/                  readiness report, data gaps, decisions, traceability
 - **Accessibility:** skip link, landmarks, a focus-trapped dialog with focus returned to the trigger, keyboard gallery (← →, Esc), 44px touch targets, and `prefers-reduced-motion` honoured everywhere (smooth scrolling, parallax, WebGL animation, particles and the custom cursor all switch off).
 - **Images:** Cloudinary `f_auto,q_auto:good` with a responsive `srcset`. If a transformed URL fails, the exact supplied URL is retried; if that fails too, a composed brand panel replaces the image.
 - **Security:** CSP and security headers (`next.config.ts`), no secrets in the client bundle, no forms or personal-data collection in this edition.
+
+## Single-file HTML (for sharing or offline review)
+
+`npm run build:single` writes **`dist/maaira-showcase.html`** (~1.4 MB), which opens by double-click with no server. Scripts, styles, fonts (Latin subsets), leather textures, logo masks and icons are all inlined. Product photos remain Cloudinary links, so they need an internet connection; offline, the brand panel shows in their place.
+
+When opened from disk, the address bar doesn't change on opening a piece (browsers restrict the History API on `file://`), so deep links work only on the hosted site.
 
 ## Environment
 

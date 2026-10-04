@@ -2,7 +2,7 @@
   "name": "maaira-fashion-bags",
   "version": "0.1.0",
   "private": true,
-  "description": "MAAIRA FASHION BAGS — luxury digital flagship (sample showcase edition)",
+  "description": "MAAIRA FASHION BAGS \u2014 luxury digital flagship (sample showcase edition)",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -10,7 +10,9 @@
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
     "assets:brand": "node scripts/build-brand-assets.mjs",
-    "qa:screens": "node scripts/qa-screens.mjs"
+    "qa:screens": "node scripts/qa-screens.mjs",
+    "build:single": "node scripts/build-single-html.mjs",
+    "qa:single": "node scripts/qa-single-html.mjs"
   },
   "dependencies": {
     "@fontsource-variable/cormorant-garamond": "^5.3.0",
