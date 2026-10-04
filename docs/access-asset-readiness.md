@@ -15,6 +15,17 @@
 | Instagram `@maairafashionbags` | Not attempted beyond linking | Login-walled platform; scraping would breach platform terms | None. The profile URL is linked, not mirrored. |
 | Master brief (`maanya_master_prompt_md_file.md`) | Read in full | Available | All sections. |
 
+### Re-check 2026-10-04 (flagship upgrade)
+
+| Source | Result |
+|---|---|
+| Live site `https://maaira.vercel.app/` | **Blocked** by egress policy (curl and WebFetch). The deployed build couldn't be compared with the code; which commit it serves is unknown. |
+| Official site `https://maaira.co.in` | **Blocked** (same) |
+| Cloudinary product photos | **Still blocked** (proxy 403) |
+| Supabase (connected account) | Reachable; **no projects exist**. No database was created (that needs owner approval and may incur cost). |
+| Audio assets | **None supplied** anywhere in the project |
+| Email provider credentials | **None supplied** |
+
 ## 2. Assets available in the project
 
 | Asset | Path | Status |

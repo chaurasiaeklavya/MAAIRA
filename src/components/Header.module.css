@@ -11,6 +11,10 @@
   border-bottom: 1px solid transparent;
 }
 
+:global(html:not(.theme-transition)) .header {
+  view-transition-name: site-header;
+}
+
 .header[data-scrolled] {
   background: var(--header-bg);
   -webkit-backdrop-filter: blur(14px) saturate(1.1);
@@ -71,7 +75,7 @@
   position: relative;
   display: inline-block;
   padding: 8px 0;
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-weight: 450;
   letter-spacing: 0.26em;
   text-transform: uppercase;
@@ -98,9 +102,14 @@
 }
 
 .navLink:hover::after,
-.navLink:focus-visible::after {
+.navLink:focus-visible::after,
+.navLink[aria-current='page']::after {
   transform: scaleX(1);
   transform-origin: left;
+}
+
+.navLink[aria-current='page'] {
+  color: var(--ink);
 }
 
 .controls {
@@ -234,6 +243,10 @@
 .menuList {
   display: grid;
   gap: 6px;
+}
+
+.menuLink[aria-current='page'] {
+  font-style: italic;
 }
 
 .menuLink {

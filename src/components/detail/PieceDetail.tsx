@@ -1,15 +1,16 @@
 'use client';
 
-import { AnimatePresence, motion, useIsPresent, type PanInfo } from 'motion/react';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { CloudImage } from '../CloudImage';
+import { AnimatePresence, motion, useIsPresent } from 'motion/react';
+import Link from 'next/link';
+import { useEffect, useRef, useState } from 'react';
 import { useExperience } from '../ExperienceProvider';
+import { GalleryControls, GalleryPhoto } from '../gallery/Gallery';
+import { useGallery } from '../gallery/useGallery';
 import { Stage } from '../showcase/Stage';
 import styles from './PieceDetail.module.css';
-import { brand, enquiryMailto } from '@/data/brand';
+import { brand } from '@/data/brand';
 import { products, resolveImages, type Product } from '@/data/products';
 import { cursorLabel } from '@/lib/cursor-store';
-import { useMediaQuery } from '@/lib/useMediaQuery';
 
 interface Props {
   product: Product;
@@ -22,44 +23,29 @@ interface Props {
 const EASE = [0.22, 1, 0.36, 1] as const;
 const EASE_IO = [0.65, 0, 0.35, 1] as const;
 
+/** Quick view: a full-screen dialog over the current page. */
 export function PieceDetail({ product, layoutSlug, onClose, onNavigate }: Props) {
-  const { reducedMotion, lockScroll, play } = useExperience();
+  const { reducedMotion, lockScroll } = useExperience();
   const isPresent = useIsPresent();
-  // Hover magnifier only where a precise hovering pointer exists; touch gets swipe.
-  const canZoom = useMediaQuery('(hover: hover) and (pointer: fine)') && !reducedMotion;
   const images = resolveImages(product);
-  const [[index, direction], setView] = useState<[number, number]>([0, 0]);
-  const [zoom, setZoom] = useState<{ x: number; y: number } | null>(null);
+  const gallery = useGallery(images.length);
   const dialogRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
-  const thumbsRef = useRef<HTMLDivElement>(null);
 
   const productIndex = products.findIndex((p) => p.slug === product.slug);
   const prevProduct = products[(productIndex - 1 + products.length) % products.length];
   const nextProduct = products[(productIndex + 1) % products.length];
   const n = String(productIndex + 1).padStart(2, '0');
   const total = String(products.length).padStart(2, '0');
-  const current = images[index] ?? images[0];
-
-  const go = useCallback(
-    (delta: number) => {
-      if (images.length < 2) return;
-      setView(([i]) => [(i + delta + images.length) % images.length, delta]);
-      setZoom(null);
-      play('tick');
-    },
-    [images.length, play],
-  );
 
   // Reset the gallery when moving to another piece (adjusting state during render).
   const [shownSlug, setShownSlug] = useState(product.slug);
   if (shownSlug !== product.slug) {
     setShownSlug(product.slug);
-    setView([0, 0]);
-    setZoom(null);
+    gallery.reset();
   }
 
-  // Scroll lock, initial focus, focus trap, keyboard controls.
+  // Scroll lock and initial focus.
   useEffect(() => {
     lockScroll(true);
     const t = window.setTimeout(() => closeRef.current?.focus({ preventScroll: true }), 60);
@@ -69,6 +55,8 @@ export function PieceDetail({ product, layoutSlug, onClose, onNavigate }: Props)
     };
   }, [lockScroll]);
 
+  // Escape, arrow keys and focus trap.
+  const { go } = gallery;
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
@@ -80,9 +68,7 @@ export function PieceDetail({ product, layoutSlug, onClose, onNavigate }: Props)
       if (e.key === 'ArrowLeft') go(-1);
       if (e.key === 'Tab' && dialogRef.current) {
         const focusables = Array.from(
-          dialogRef.current.querySelectorAll<HTMLElement>(
-            'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])',
-          ),
+          dialogRef.current.querySelectorAll<HTMLElement>('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'),
         ).filter((el) => el.offsetParent !== null);
         if (!focusables.length) return;
         const first = focusables[0];
@@ -100,31 +86,8 @@ export function PieceDetail({ product, layoutSlug, onClose, onNavigate }: Props)
     return () => window.removeEventListener('keydown', onKey);
   }, [go, onClose]);
 
-  const onDragEnd = (_: unknown, info: PanInfo) => {
-    if (info.offset.x < -60 || info.velocity.x < -400) go(1);
-    else if (info.offset.x > 60 || info.velocity.x > 400) go(-1);
-  };
-
-  const onZoomMove = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!canZoom || e.pointerType !== 'mouse') return;
-    const r = e.currentTarget.getBoundingClientRect();
-    setZoom({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 });
-  };
-
-  const pageUrl = typeof window !== 'undefined' ? `${window.location.origin}${window.location.pathname}?piece=${product.slug}` : '';
-  const mailto = enquiryMailto(
-    `Enquiry — ${product.displayName} | ${brand.name}`,
-    `Hello ${brand.name},\n\nI would like to know more about ${product.displayName} (reference ${product.id}).\n\n${pageUrl}\n\nThank you.`,
-  );
-
-  const slideVariants = {
-    enter: (dir: number) => (reducedMotion ? { opacity: 0 } : { opacity: 0, x: dir >= 0 ? 60 : -60, scale: 1.02 }),
-    center: { opacity: 1, x: 0, scale: 1 },
-    exit: (dir: number) => (reducedMotion ? { opacity: 0 } : { opacity: 0, x: dir >= 0 ? -60 : 60, scale: 0.99 }),
-  };
-
   const sharedFrame = layoutSlug === product.slug;
-  const dragCursor = cursorLabel('Drag');
+  const href = `/shop/${product.slug}`;
 
   return (
     <motion.div
@@ -175,111 +138,24 @@ export function PieceDetail({ product, layoutSlug, onClose, onNavigate }: Props)
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.85, ease: EASE_IO }}
             >
-              {/* Hover magnifier and swipe are pointer enhancements; arrows and thumbnails are the accessible controls. */}
-              <div
-                className={styles.photo}
-                onPointerMove={onZoomMove}
-                onPointerEnter={images.length > 1 ? dragCursor.onPointerEnter : undefined}
-                onPointerLeave={() => {
-                  setZoom(null);
-                  dragCursor.onPointerLeave();
-                }}
-              >
-                <AnimatePresence initial={false} custom={direction} mode="popLayout">
-                  {current && (
-                    <motion.div
-                      key={`${product.slug}-${index}`}
-                      className={styles.slide}
-                      custom={direction}
-                      variants={slideVariants}
-                      initial="enter"
-                      animate="center"
-                      exit="exit"
-                      transition={{ duration: 0.7, ease: EASE }}
-                      drag={images.length > 1 && !canZoom ? 'x' : false}
-                      dragConstraints={{ left: 0, right: 0 }}
-                      dragElastic={0.18}
-                      onDragEnd={onDragEnd}
-                    >
-                      <CloudImage
-                        asset={current.asset}
-                        alt={current.alt}
-                        sizes="(max-width: 900px) 92vw, 46vw"
-                        width={1280}
-                        maxWidth={2000}
-                        priority
-                        draggable={false}
-                        className={styles.photoImg}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                {zoom && current && canZoom && (
-                  <div className={styles.zoom} aria-hidden="true">
-                    <div
-                      className={styles.zoomInner}
-                      style={{ transformOrigin: `${zoom.x}% ${zoom.y}%` }}
-                    >
-                      <CloudImage
-                        asset={current.asset}
-                        alt=""
-                        sizes="100vw"
-                        width={2000}
-                        maxWidth={2000}
-                        draggable={false}
-                        className={styles.photoImg}
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
+              <GalleryPhoto
+                images={images}
+                gallery={gallery}
+                sizes="(max-width: 900px) 92vw, 46vw"
+                priority
+                idPrefix={product.slug}
+              />
             </motion.div>
           </div>
 
-          {images.length > 1 && (
-            <motion.div
-              className={styles.controls}
-              initial={{ opacity: 0, y: 16 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.8, delay: 0.45, ease: EASE }}
-            >
-              <button type="button" className={styles.arrow} onClick={() => go(-1)} aria-label="Previous image">
-                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                  <path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" strokeWidth="1.1" />
-                </svg>
-              </button>
-
-              <div className={styles.thumbs} ref={thumbsRef} role="group" aria-label="Choose a view">
-                {images.map((img, i) => (
-                  <button
-                    key={img.assetId}
-                    type="button"
-                    className={styles.thumb}
-                    aria-label={`Show ${img.alt}`}
-                    aria-current={i === index ? 'true' : undefined}
-                    onClick={() => {
-                      setView(([prev]) => [i, i > prev ? 1 : -1]);
-                      setZoom(null);
-                    }}
-                  >
-                    <CloudImage asset={img.asset} alt="" sizes="72px" width={240} maxWidth={480} />
-                  </button>
-                ))}
-              </div>
-
-              <p className={styles.counter} aria-live="polite">
-                <span>{String(index + 1).padStart(2, '0')}</span> / {String(images.length).padStart(2, '0')}
-              </p>
-
-              <button type="button" className={styles.arrow} onClick={() => go(1)} aria-label="Next image">
-                <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
-                  <path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" strokeWidth="1.1" />
-                </svg>
-              </button>
-            </motion.div>
-          )}
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.8, delay: 0.45, ease: EASE }}
+          >
+            <GalleryControls images={images} gallery={gallery} />
+          </motion.div>
         </motion.section>
 
         <motion.aside
@@ -289,14 +165,8 @@ export function PieceDetail({ product, layoutSlug, onClose, onNavigate }: Props)
           exit={reducedMotion ? { opacity: 0 } : { opacity: 0, x: 60, transition: { duration: 0.42, ease: EASE_IO } }}
           transition={{ duration: 0.9, delay: 0.12, ease: EASE }}
         >
-          <button
-            ref={closeRef}
-            type="button"
-            className={styles.close}
-            onClick={onClose}
-            {...cursorLabel('Close')}
-          >
-            <span>Back to the pieces</span>
+          <button ref={closeRef} type="button" className={styles.close} onClick={onClose} {...cursorLabel('Close')}>
+            <span>Close quick view</span>
             <span className={styles.closeIcon} aria-hidden="true">
               <i />
               <i />
@@ -346,11 +216,14 @@ export function PieceDetail({ product, layoutSlug, onClose, onNavigate }: Props)
               </dl>
 
               <div className={styles.actions}>
-                <a className={styles.primary} href={mailto}>
-                  <span>Enquire about this piece</span>
-                </a>
-                <a className={styles.secondary} href={brand.contact.phoneHref}>
-                  Call {brand.contact.phoneDisplay}
+                <Link className={styles.primary} href={href} transitionTypes={['nav-forward']}>
+                  <span>View full details</span>
+                </Link>
+                <Link className={styles.secondary} href={`${href}#enquire`}>
+                  Enquire about this piece
+                </Link>
+                <a className={styles.tertiary} href={brand.contact.phoneHref}>
+                  or call {brand.contact.phoneDisplay}
                 </a>
               </div>
             </motion.div>

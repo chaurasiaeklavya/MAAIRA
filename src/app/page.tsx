@@ -1,25 +1,22 @@
+import { PageShell } from '@/components/PageShell';
 import { Collection } from '@/components/collection/Collection';
-import { Contact } from '@/components/Contact';
-import { Cursor } from '@/components/Cursor';
-import { Footer } from '@/components/Footer';
-import { Header } from '@/components/Header';
 import { Hero } from '@/components/hero/Hero';
+import { CampaignStudy } from '@/components/home/CampaignStudy';
+import { EnquiryBand } from '@/components/home/EnquiryBand';
+import { FeaturedPieces } from '@/components/home/FeaturedPieces';
+import { GalleryRing } from '@/components/home/GalleryRing';
 import { House } from '@/components/House';
-import { Showcase } from '@/components/showcase/Showcase';
 
 export default function Home() {
   return (
-    <>
-      <Header />
-      <main id="main">
-        <Hero />
-        <Showcase />
-        <House />
-        <Collection />
-        <Contact />
-      </main>
-      <Footer />
-      <Cursor />
-    </>
+    <PageShell>
+      <Hero />
+      <FeaturedPieces />
+      <CampaignStudy />
+      <House teaser />
+      <GalleryRing />
+      <Collection />
+      <EnquiryBand />
+    </PageShell>
   );
 }

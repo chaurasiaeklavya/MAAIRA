@@ -1,0 +1,65 @@
+.status {
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 20px;
+  min-height: 100svh;
+  padding: calc(var(--header-h) + 40px) var(--gutter) 80px;
+  text-align: center;
+  --leather-texture-opacity: 0.35;
+}
+
+:root[data-theme='dark'] .status {
+  --leather-base: #1c140f;
+  --leather-light: #2c1f17;
+}
+
+.mark {
+  width: 120px;
+  margin-bottom: 12px;
+  background: rgb(0 0 0 / 0.28);
+  filter: drop-shadow(0 1px 0 rgb(255 255 255 / 0.12)) drop-shadow(0 -1px 0 rgb(0 0 0 / 0.4));
+}
+
+:root[data-theme='light'] .mark {
+  background: rgb(60 35 20 / 0.25);
+  filter: drop-shadow(0 1px 0 rgb(255 245 230 / 0.6));
+}
+
+.title {
+  font-size: var(--step-4);
+  max-width: 16ch;
+}
+
+.text {
+  max-width: 44ch;
+  color: var(--ink-soft);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+.primary,
+.secondary {
+  display: inline-grid;
+  place-items: center;
+  min-height: 52px;
+  padding: 0 26px;
+  font-size: 0.76rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+}
+
+.primary {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.secondary {
+  border: 1px solid var(--line-strong);
+}

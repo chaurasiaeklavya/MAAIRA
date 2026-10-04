@@ -68,13 +68,30 @@
   display: grid;
   justify-items: center;
   gap: clamp(28px, 5vh, 56px);
-  transform-style: preserve-3d;
-  will-change: transform;
+}
+
+.monogramSlot {
+  position: relative;
+  width: clamp(160px, 25vw, 320px);
+  aspect-ratio: 406 / 277;
+}
+
+/* Box the WebGL stamp is drawn into (measured, never transformed). */
+.anchor {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
 }
 
 .monogramWrap {
-  position: relative;
-  width: clamp(150px, 24vw, 300px);
+  position: absolute;
+  inset: 0;
+  transition: opacity 600ms var(--ease-out);
+}
+
+/* Once the heat-stamped mark is drawn in WebGL, the DOM logo steps aside. */
+.hero[data-stamp='on'] .monogramWrap {
+  opacity: 0 !important;
 }
 
 .monogramShadow {
@@ -155,9 +172,85 @@
   gap: 32px;
 }
 
+.intro {
+  display: grid;
+  gap: 18px;
+  justify-items: start;
+}
+
+.presenting {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 44px;
+  font-size: 0.82rem;
+  color: var(--ink);
+  background: linear-gradient(currentColor, currentColor) 0 calc(100% - 10px) / 0 1px no-repeat;
+  transition: background-size 600ms var(--ease-out);
+}
+
+.presenting:hover,
+.presenting:focus-visible {
+  background-size: 100% 1px;
+}
+
+.presentingDot {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.presentingDot::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1px solid var(--accent);
+  animation: halo 2.8s var(--ease-out) infinite;
+}
+
+@keyframes halo {
+  from {
+    transform: scale(0.4);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+
+.ctas {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px 26px;
+}
+
+.ctaGhost {
+  display: inline-flex;
+  align-items: center;
+  min-height: 48px;
+  font-size: 0.76rem;
+  font-weight: 450;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  background: linear-gradient(currentColor, currentColor) 0 calc(100% - 12px) / 100% 1px no-repeat;
+  transition: color var(--dur-fast);
+}
+
+.ctaGhost:hover,
+.ctaGhost:focus-visible {
+  color: var(--ink);
+}
+
 .descriptor {
   max-width: 22ch;
-  font-size: 0.74rem;
+  font-size: 0.76rem;
   font-weight: 450;
   letter-spacing: 0.3em;
   line-height: 1.9;
@@ -221,7 +314,7 @@
 }
 
 .cta:hover svg {
-  transform: translateY(3px);
+  transform: translateX(6px);
 }
 
 .scrollCue {
@@ -279,6 +372,12 @@
   }
   .descriptor {
     max-width: none;
+  }
+  .intro {
+    justify-items: center;
+  }
+  .ctas {
+    justify-content: center;
   }
 }
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { motion, useScroll, useTransform } from 'motion/react';
+import Link from 'next/link';
 import { useRef } from 'react';
 import { useExperience } from './ExperienceProvider';
 import styles from './House.module.css';
@@ -10,7 +11,8 @@ const EASE = [0.22, 1, 0.36, 1] as const;
 
 const STATEMENT = ['An object of', 'quiet confidence —', 'designed to be carried,', 'made to be remembered.'];
 
-export function House() {
+/** Brand introduction with the client-supplied credentials. `teaser` adds a link to the full House page. */
+export function House({ teaser = false }: { teaser?: boolean }) {
   const { reducedMotion } = useExperience();
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
@@ -64,6 +66,14 @@ export function House() {
             This edition offers a first look at selected pieces from the house — an invitation to the collection that
             follows.
           </p>
+          {teaser && (
+            <Link href="/house" className={styles.more} transitionTypes={['nav-forward']}>
+              Discover the house
+              <svg viewBox="0 0 32 12" width="28" height="12" aria-hidden="true">
+                <path d="M0 6h30m0 0-5-5m5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1" />
+              </svg>
+            </Link>
+          )}
         </motion.div>
 
         <ul className={styles.credentials} aria-label="Recognition">

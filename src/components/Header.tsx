@@ -1,20 +1,20 @@
 'use client';
 
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from 'motion/react';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useEffect, useRef, useState } from 'react';
 import { useExperience } from './ExperienceProvider';
 import styles from './Header.module.css';
+import { SoundControl } from './sound/SoundControl';
 import { brand } from '@/data/brand';
+import { primaryNav as NAV, serviceNav } from '@/data/site';
 
-const NAV = [
-  { href: '#pieces', label: 'The Pieces' },
-  { href: '#house', label: 'The House' },
-  { href: '#collection', label: 'Collection' },
-  { href: '#contact', label: 'Contact' },
-];
+const isActive = (pathname: string, href: string) => pathname === href || pathname.startsWith(`${href}/`);
 
 export function Header() {
-  const { theme, toggleTheme, soundOn, toggleSound, scrollTo, lockScroll, play } = useExperience();
+  const { theme, toggleTheme, lockScroll, play } = useExperience();
+  const pathname = usePathname();
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
   const [hidden, setHidden] = useState(false);
@@ -46,12 +46,13 @@ export function Header() {
     };
   }, [menuOpen, lockScroll]);
 
-  const go = (href: string) => (e: React.MouseEvent) => {
-    e.preventDefault();
+  // Close the menu whenever the route changes (adjusting state during render).
+  const [shownPath, setShownPath] = useState(pathname);
+  if (shownPath !== pathname) {
+    setShownPath(pathname);
     setMenuOpen(false);
-    // let the menu close before scrolling so the lock is released
-    requestAnimationFrame(() => scrollTo(href));
-  };
+    setHidden(false);
+  }
 
   return (
     <>
@@ -60,50 +61,33 @@ export function Header() {
         data-scrolled={scrolled || undefined}
         data-hidden={hidden || undefined}
         data-menu={menuOpen || undefined}
+        data-home={pathname === '/' || undefined}
       >
         <div className={styles.inner}>
-          <a
-            href="#top"
-            className={styles.brand}
-            onClick={(e) => {
-              e.preventDefault();
-              setMenuOpen(false);
-              scrollTo(0);
-            }}
-            aria-label={`${brand.name} — back to top`}
-          >
+          <Link href="/" className={styles.brand} aria-label={`${brand.name} — home`} transitionTypes={['nav-back']}>
             <span className={`logo-mask logo-mask--monogram ${styles.monogram}`} aria-hidden="true" />
             <span className={`logo-mask logo-mask--wordmark ${styles.wordmark}`} aria-hidden="true" />
-          </a>
+          </Link>
 
           <nav className={styles.nav} aria-label="Primary">
             <ul>
               {NAV.map((item) => (
                 <li key={item.href}>
-                  <a href={item.href} onClick={go(item.href)} className={styles.navLink}>
+                  <Link
+                    href={item.href}
+                    className={styles.navLink}
+                    aria-current={isActive(pathname, item.href) ? 'page' : undefined}
+                    transitionTypes={['nav-forward']}
+                  >
                     {item.label}
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
           </nav>
 
           <div className={styles.controls}>
-            <button
-              type="button"
-              className={styles.iconButton}
-              onClick={toggleSound}
-              aria-pressed={soundOn}
-              aria-label={soundOn ? 'Sound on — turn interface sound off' : 'Sound off — turn interface sound on'}
-              title={soundOn ? 'Sound on' : 'Sound off'}
-            >
-              <span className={styles.soundBars} data-on={soundOn || undefined} aria-hidden="true">
-                <i />
-                <i />
-                <i />
-                <i />
-              </span>
-            </button>
+            <SoundControl />
             <button
               type="button"
               className={styles.iconButton}
@@ -159,15 +143,16 @@ export function Header() {
                     animate={{ opacity: 1, y: 0, transition: { delay: 0.25 + i * 0.07, duration: 0.7 } }}
                     exit={{ opacity: 0, y: 12, transition: { duration: 0.25 } }}
                   >
-                    <a
+                    <Link
                       ref={i === 0 ? firstLinkRef : undefined}
                       href={item.href}
-                      onClick={go(item.href)}
                       className={styles.menuLink}
+                      aria-current={isActive(pathname, item.href) ? 'page' : undefined}
+                      onClick={() => setMenuOpen(false)}
                     >
                       <span className={styles.menuIndex}>0{i + 1}</span>
                       {item.label}
-                    </a>
+                    </Link>
                   </motion.li>
                 ))}
               </ul>
@@ -178,10 +163,13 @@ export function Header() {
               animate={{ opacity: 1, transition: { delay: 0.55 } }}
               exit={{ opacity: 0, transition: { duration: 0.2 } }}
             >
+              <Link href={serviceNav[0].href} onClick={() => setMenuOpen(false)}>
+                {serviceNav[0].label}
+              </Link>
               <a href={`mailto:${brand.contact.email}`}>{brand.contact.email}</a>
               <a href={brand.contact.phoneHref}>{brand.contact.phoneDisplay}</a>
               <a href={brand.contact.instagramUrl} target="_blank" rel="noopener noreferrer">
-                Instagram
+                Instagram<span className="visually-hidden"> (opens in a new tab)</span>
               </a>
             </motion.div>
           </motion.div>

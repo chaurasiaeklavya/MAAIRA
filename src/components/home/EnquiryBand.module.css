@@ -1,0 +1,103 @@
+.band {
+  position: relative;
+  padding-block: clamp(80px, 14vh, 150px);
+  --leather-texture-opacity: 0.45;
+}
+
+:root[data-theme='dark'] .band {
+  --leather-base: #24180f;
+  --leather-light: #3a281c;
+}
+
+:root[data-theme='light'] .band {
+  --leather-base: #caa780;
+  --leather-light: #dcc09d;
+  --leather-texture-opacity: 0.28;
+  --leather-blend: overlay;
+  color: #2a1c14;
+}
+
+.band::after {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border: 1px dashed color-mix(in srgb, currentColor 22%, transparent);
+  pointer-events: none;
+}
+
+.inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 40px;
+}
+
+.inner :global(.eyebrow) {
+  color: inherit;
+  opacity: 0.75;
+}
+
+.title {
+  margin-top: 16px;
+  font-size: var(--step-4);
+  max-width: 14ch;
+}
+
+.actions {
+  display: grid;
+  gap: 12px;
+  min-width: min(100%, 320px);
+}
+
+.primary,
+.secondary {
+  display: grid;
+  place-items: center;
+  min-height: 54px;
+  padding: 0 24px;
+  font-size: 0.76rem;
+  font-weight: 450;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  transition:
+    background-color 500ms var(--ease-out),
+    color 500ms var(--ease-out);
+}
+
+:root[data-theme='dark'] .primary {
+  color: #1d140e;
+  background: #efe6da;
+}
+
+:root[data-theme='light'] .primary {
+  color: #f6efe6;
+  background: #2a1c14;
+}
+
+.primary:hover,
+.primary:focus-visible {
+  filter: brightness(1.08);
+}
+
+.secondary {
+  border: 1px solid color-mix(in srgb, currentColor 45%, transparent);
+}
+
+.secondary:hover,
+.secondary:focus-visible {
+  background: color-mix(in srgb, currentColor 10%, transparent);
+}
+
+.phone {
+  justify-self: center;
+  padding: 8px;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.phone:hover {
+  opacity: 1;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}

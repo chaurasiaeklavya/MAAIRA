@@ -1,0 +1,353 @@
+.form {
+  display: grid;
+  gap: 26px;
+}
+
+.modes {
+  display: inline-grid;
+  grid-auto-flow: column;
+  justify-self: start;
+  padding: 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+}
+
+.mode {
+  min-height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  transition:
+    background-color 400ms var(--ease-out),
+    color 400ms var(--ease-out);
+}
+
+.mode[aria-pressed='true'] {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.honeypot {
+  position: absolute;
+  left: -10000px;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 22px 24px;
+}
+
+.modeFields {
+  display: grid;
+  gap: 22px;
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+}
+
+.field label,
+.fieldset legend {
+  font-size: 0.82rem;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+}
+
+.req,
+.hintInline {
+  color: var(--ink-muted);
+  font-size: 0.76rem;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 14px;
+  background: color-mix(in srgb, var(--surface-raised) 70%, transparent);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  color: var(--ink);
+  font-size: 1rem;
+  transition:
+    border-color 300ms var(--ease-out),
+    box-shadow 300ms var(--ease-out);
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 120px;
+  line-height: 1.6;
+}
+
+.field input:focus-visible,
+.field select:focus-visible,
+.field textarea:focus-visible {
+  outline: none;
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 30%, transparent);
+}
+
+.field[data-invalid] input,
+.field[data-invalid] select,
+.field[data-invalid] textarea {
+  border-color: #b4553f;
+}
+
+.error {
+  font-size: 0.82rem;
+  color: #b4553f;
+}
+
+:root[data-theme='dark'] .error,
+:root[data-theme='dark'] .field[data-invalid] input,
+:root[data-theme='dark'] .field[data-invalid] textarea {
+  color: #f0a48f;
+  border-color: #e0876f;
+}
+
+:root[data-theme='dark'] .field[data-invalid] input,
+:root[data-theme='dark'] .field[data-invalid] textarea {
+  color: var(--ink);
+}
+
+.fieldset {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.chip {
+  position: relative;
+}
+
+.chip input {
+  position: absolute;
+  opacity: 0;
+  inset: 0;
+  cursor: pointer;
+}
+
+.chip span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 18px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  font-size: 0.88rem;
+  transition:
+    background-color 300ms var(--ease-out),
+    color 300ms var(--ease-out),
+    border-color 300ms;
+}
+
+.chip input:checked + span {
+  background: var(--ink);
+  color: var(--bg);
+  border-color: var(--ink);
+}
+
+.chip input:focus-visible + span {
+  outline: 1.5px solid var(--focus);
+  outline-offset: 3px;
+}
+
+.hint {
+  font-size: 0.78rem;
+  color: var(--ink-muted);
+}
+
+.consent {
+  display: grid;
+  gap: 6px;
+}
+
+.check {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.check input {
+  flex: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 2px;
+  accent-color: var(--accent);
+}
+
+.check a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 28px;
+}
+
+.submit {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 56px;
+  padding: 0 32px;
+  background: var(--ink);
+  color: var(--bg);
+  font-size: 0.78rem;
+  font-weight: 450;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  transition:
+    background-color 400ms var(--ease-out),
+    transform 200ms var(--ease-out);
+}
+
+.submit:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--accent-ink);
+}
+
+.submit:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.submit:disabled {
+  opacity: 0.7;
+  cursor: progress;
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 1.5px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 800ms linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.alt {
+  font-size: 0.86rem;
+  color: var(--ink-muted);
+}
+
+.alt a {
+  color: var(--ink-soft);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.statusRegion:focus {
+  outline: none;
+}
+
+.formError {
+  padding: 14px 16px;
+  border-left: 2px solid #b4553f;
+  background: color-mix(in srgb, #b4553f 8%, transparent);
+  font-size: 0.92rem;
+}
+
+.unavailable {
+  display: grid;
+  gap: 10px;
+  padding: 20px;
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  font-size: 0.94rem;
+}
+
+.unavailableActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.secondaryButton {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  padding: 0 20px;
+  border: 1px solid var(--ink);
+  font-size: 0.76rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  transition:
+    background-color 300ms,
+    color 300ms;
+}
+
+.secondaryButton:hover {
+  background: var(--ink);
+  color: var(--bg);
+}
+
+.success {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+  padding: clamp(24px, 4vw, 48px);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+}
+
+.success:focus {
+  outline: none;
+}
+
+.success h3 {
+  font-size: var(--step-3);
+  line-height: 1.1;
+}
+
+.successMark {
+  width: 56px;
+  background: var(--accent);
+}
+
+.ref {
+  font-family: ui-monospace, Menlo, monospace;
+  letter-spacing: 0.04em;
+}
+
+@media (max-width: 700px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .modes {
+    justify-self: stretch;
+  }
+  .mode {
+    padding: 0 12px;
+  }
+}

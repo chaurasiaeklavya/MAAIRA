@@ -229,3 +229,51 @@ async function icon(size, file) {
 }
 await icon(512, 'src/app/icon.png');
 await icon(180, 'src/app/apple-icon.png');
+
+/* ------------------------------------------------------------------ */
+/* Heat-stamp texture for the WebGL hero                              */
+/*   R = crisp monogram (foil area)                                   */
+/*   G = blurred monogram (deboss bevel profile)                      */
+/*   B = wide blur (soft pressed-in shadow)                           */
+/* Derived from the luminance-keyed original pixels — no redrawing.   */
+/* ------------------------------------------------------------------ */
+{
+  const SCALE = 2;
+  const PAD = 48; // px at output scale, keeps blurs from clipping
+  const base = sharp('public/brand/maaira-monogram-mask.png');
+  const meta = await base.metadata();
+  const w = meta.width * SCALE;
+  const h = meta.height * SCALE;
+  const resized = await sharp('public/brand/maaira-monogram-mask.png')
+    .extractChannel(3)
+    .resize(w, h, { kernel: 'lanczos3' })
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  // sharp may return extra channels after some operations; always read channel 0.
+  const channel0 = ({ data, info }) => {
+    const out = Buffer.alloc(info.width * info.height);
+    for (let i = 0; i < out.length; i++) out[i] = data[i * info.channels];
+    return out;
+  };
+  // Pad by hand: a zero (black) border so blurs never pick up a bright edge.
+  const W = w + PAD * 2;
+  const H = h + PAD * 2;
+  const padded = Buffer.alloc(W * H);
+  const src = channel0(resized);
+  for (let y = 0; y < h; y++) src.copy(padded, (y + PAD) * W + PAD, y * w, (y + 1) * w);
+  const alpha = { data: padded };
+  const blurred = async (sigma) =>
+    channel0(await sharp(padded, { raw: { width: W, height: H, channels: 1 } }).blur(sigma).raw().toBuffer({ resolveWithObject: true }));
+  const bevel = await blurred(2.6 * SCALE);
+  const soft = await blurred(9 * SCALE);
+  const rgb = Buffer.alloc(W * H * 3);
+  for (let i = 0; i < W * H; i++) {
+    rgb[i * 3] = alpha.data[i];
+    rgb[i * 3 + 1] = bevel[i];
+    rgb[i * 3 + 2] = soft[i];
+  }
+  await sharp(rgb, { raw: { width: W, height: H, channels: 3 } })
+    .webp({ lossless: true, effort: 6 })
+    .toFile('public/textures/monogram-stamp.webp')
+    .then((r) => console.log('monogram-stamp.webp', `${W}×${H}`, `${r.size} B`, `content ${w}×${h} pad ${PAD}`));
+}

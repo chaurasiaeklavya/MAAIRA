@@ -1,6 +1,6 @@
 # Creative & Technical Decision Record
 
-The sample showcase edition, built for client approval before the full catalogue and commerce build.
+The original showcase edition (sections 1–6), plus the flagship upgrade of 2026-10-04 (section 7). The audit that drove the upgrade is in `docs/audit-2026-10.md`.
 
 ## 1. How the two briefs were reconciled
 
@@ -70,3 +70,38 @@ The sample showcase edition, built for client approval before the full catalogue
 ## 6. Research note
 
 No external market research was carried out in this phase. The design follows general luxury e-commerce principles: product-first framing, restrained palettes, editorial typography, unhurried motion and transparent pricing language. It is not modelled on any specific house's site, layout, copy or assets. A focused research pass (master brief §4) remains open for the full build (R07).
+
+
+## 7. Flagship upgrade (2026-10-04)
+
+### 7.1 Architecture
+
+- **Single page → routed site:** `/`, `/shop`, `/shop/[slug]`, `/house`, `/editorial`, `/contact`, `/client-services/*`, `/admin/enquiries` and `POST /api/enquiries`. The header, footer, sound and cursor live in the root layout.
+- **Sales model:** enquiry-led. The cart and payments remain unbuilt rather than simulated (master brief §22). Whether to sell directly online is an open business decision.
+- **Retired:** the single-file HTML build. A site with server routes can't be one offline file; review it on a hosted preview instead.
+
+### 7.2 Signature 3D and motion
+
+| Element | Why | Implementation | Fallback |
+|---|---|---|---|
+| **Heat-stamped monogram** | A handbag maker's mark is literally stamped into leather. The hero now does exactly that: the logo is debossed into the grain, foil-filled, and lit by the same moving light. | Fragment shader combines the leather height map with a stamp texture derived from the original logo pixels (crisp mask, bevel, occlusion). Hot-foil press intro: the die lands, then the foil sweeps. Silver foil in dark, espresso pigment in light. | DOM logo mask (no WebGL, or the texture fails); one static frame under reduced motion |
+| **"In the round" gallery** | Discovery: every photographed view on one cylinder; choosing one opens its piece | CSS 3D (`preserve-3d`), drag with inertia snap, arrow buttons, focus-to-front, idle drift, per-plate shading by facing angle | No drift under reduced motion; buttons and links always work |
+| **Campaign study** | Storytelling: one piece turns through its real photographed views as you scroll, under a travelling light | Sticky section; scroll-linked crossfades and chapter captions (keyframe windows clamped to [0, 1] for WAAPI acceleration) | Static triptych under reduced motion |
+| **Shared-element routing** | Continuity: the photo you click travels to the product page | React `<ViewTransition name>` on card and product-page frames; directional page slides; anchored header | Instant under reduced motion |
+| **Editorial studies** | Three distinct compositions (presence, form, contrast) instead of repeated cards | Scroll-linked parallax per layer | Static |
+| **Text reveals** | One deliberate headline treatment instead of generic fade-ups | `RevealText`: masked word rise | Fade |
+
+Three.js was again not adopted. Raw WebGL (hero) and CSS 3D (ring) cover the need with no new dependency.
+
+### 7.3 Sound
+
+The engine has a master gain, a cue bus with a procedural room reverb, an ambience bus and a compressor. Cues cover open, close, tick, page, success and error. Ambience is a generated room tone (opt-in). The control offers on/off, ambience and volume, persists choices, resumes only after a user gesture, suspends while the tab is hidden, and fully suspends on mute. **No licensed recordings exist yet**; the manifest lists the slots to supply.
+
+### 7.4 Backend
+
+- **Validation:** shared client/server rules; phone numbers normalised to E.164 (10-digit Indian mobiles get +91).
+- **Abuse protection:** honeypot, timing trap, per-IP sliding-window limit, same-origin check, JSON-only, 10 KB body cap.
+- **Integrity:** idempotency keys de-duplicate retries; references like `EQ-…` / `CB-…`.
+- **Storage adapters:** Supabase (PostgREST over fetch, RLS-locked table, migration included), a JSON-lines file (single server), or neither (honest 503).
+- **Email:** optional Resend notification with HTML-escaped content.
+- **Admin:** HTTP Basic via `proxy.ts`, re-verified in handlers and server actions; disabled (404) unless credentials are set; `noindex` and `no-store`.

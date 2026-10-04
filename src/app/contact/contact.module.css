@@ -1,0 +1,22 @@
+.grid {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
+  gap: clamp(32px, 6vw, 112px);
+  align-items: start;
+  padding-bottom: clamp(96px, 14vh, 160px);
+}
+
+.channels {
+  position: sticky;
+  top: calc(var(--header-h) + 24px);
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .channels {
+    position: static;
+    order: 2;
+  }
+}

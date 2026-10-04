@@ -1,11 +1,13 @@
 'use client';
 
 import { motion, useMotionValue, useMotionValueEvent, useScroll, useTransform, type MotionValue } from 'motion/react';
+import Link from 'next/link';
 import { useRef, useState, type ReactNode } from 'react';
 import { useExperience } from '../ExperienceProvider';
 import styles from './Collection.module.css';
 import { brand } from '@/data/brand';
 import { cursorLabel } from '@/lib/cursor-store';
+import { centredRange } from '@/lib/ranges';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 
 /**
@@ -18,7 +20,7 @@ interface Slide {
   tone: Tone;
   title: ReactNode;
   line: string;
-  cta?: { href: string; label: string };
+  cta: { href: string; label: string; external?: boolean };
 }
 
 const SLIDES: Slide[] = [
@@ -30,6 +32,7 @@ const SLIDES: Slide[] = [
       </>
     ),
     line: 'The collection, in full, follows.',
+    cta: { href: '/shop', label: 'Explore the pieces' },
   },
   {
     tone: 'plaster',
@@ -39,6 +42,7 @@ const SLIDES: Slide[] = [
       </>
     ),
     line: 'Considered pieces for every chapter of the day.',
+    cta: { href: '/house', label: 'The House' },
   },
   {
     tone: 'podium',
@@ -48,6 +52,7 @@ const SLIDES: Slide[] = [
       </>
     ),
     line: 'A place is being kept.',
+    cta: { href: '/editorial', label: 'The Editorial' },
   },
   {
     tone: 'caramel',
@@ -57,7 +62,7 @@ const SLIDES: Slide[] = [
       </>
     ),
     line: 'Follow the house for what comes next.',
-    cta: { href: brand.contact.instagramUrl, label: `Instagram ${brand.contact.instagramHandle}` },
+    cta: { href: brand.contact.instagramUrl, label: `Instagram ${brand.contact.instagramHandle}`, external: true },
   },
 ];
 
@@ -92,8 +97,10 @@ function SlideView({
   const center = n > 1 ? index / (n - 1) : 0;
   const still = useMotionValue(center);
   const source = progress ?? still;
-  const titleX = useTransform(source, [center - 0.5, center, center + 0.5], [140, 0, -140]);
-  const motifX = useTransform(source, [center - 0.5, center + 0.5], [-60, 60]);
+  const titleRange = centredRange(center, 0.5, 140, -140);
+  const motifRange = centredRange(center, 0.5, -60, 60);
+  const titleX = useTransform(source, titleRange.input, titleRange.output);
+  const motifX = useTransform(source, motifRange.input, motifRange.output);
 
   return (
     <article className={styles.slide} data-tone={slide.tone} aria-roledescription="slide" aria-label={`${index + 1} of ${n}`}>
@@ -136,7 +143,7 @@ function SlideView({
         </p>
         <h3 className={`${styles.title} display`}>{slide.title}</h3>
         <p className={styles.line}>{slide.line}</p>
-        {slide.cta && (
+        {slide.cta.external ? (
           <a className={styles.cta} href={slide.cta.href} target="_blank" rel="noopener noreferrer">
             {slide.cta.label}
             <span className="visually-hidden"> (opens in a new tab)</span>
@@ -144,6 +151,13 @@ function SlideView({
               <path d="M7 17 17 7M9 7h8v8" fill="none" stroke="currentColor" strokeWidth="1.1" />
             </svg>
           </a>
+        ) : (
+          <Link className={styles.cta} href={slide.cta.href} transitionTypes={['nav-forward']}>
+            {slide.cta.label}
+            <svg viewBox="0 0 32 12" width="24" height="12" aria-hidden="true">
+              <path d="M0 6h30m0 0-5-5m5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1" />
+            </svg>
+          </Link>
         )}
       </motion.div>
     </article>
@@ -160,7 +174,7 @@ function Pinned() {
   useMotionValueEvent(scrollYProgress, 'change', (v) => setCurrent(Math.min(n - 1, Math.round(v * (n - 1)))));
 
   return (
-    <div ref={ref} className={styles.pinTrack} style={{ height: `${n * 100}vh` }}>
+    <div ref={ref} className={styles.pinTrack} style={{ height: `${100 + (n - 1) * 70}vh` }}>
       <div className={styles.sticky}>
         <motion.div className={styles.rail} style={{ x, width: `${n * 100}vw` }}>
           {SLIDES.map((s, i) => (

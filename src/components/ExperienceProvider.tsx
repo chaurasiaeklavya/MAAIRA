@@ -2,9 +2,10 @@
 
 import Lenis from 'lenis';
 import { MotionConfig } from 'motion/react';
+import { usePathname } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { flushSync } from 'react-dom';
-import { play, setSoundEnabled, type SoundName } from '@/lib/sound';
+import { hydrateSoundPreferences, play, type Cue } from '@/lib/sound/engine';
 import { useMediaQuery } from '@/lib/useMediaQuery';
 
 export type Theme = 'light' | 'dark';
@@ -12,9 +13,7 @@ export type Theme = 'light' | 'dark';
 interface Experience {
   theme: Theme;
   toggleTheme: (origin?: { x: number; y: number }) => void;
-  soundOn: boolean;
-  toggleSound: () => void;
-  play: (name: SoundName) => void;
+  play: (name: Cue) => void;
   reducedMotion: boolean;
   /** Pause/resume smooth scrolling (e.g. while a dialog is open). */
   lockScroll: (locked: boolean) => void;
@@ -24,7 +23,6 @@ interface Experience {
 const ExperienceContext = createContext<Experience | null>(null);
 
 const THEME_KEY = 'maaira-theme';
-const SOUND_KEY = 'maaira-sound';
 
 function readTheme(): Theme {
   if (typeof document === 'undefined') return 'dark';
@@ -35,21 +33,28 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
   // Hydration-safe: server and first client render agree on `false`, then sync.
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [theme, setTheme] = useState<Theme>('dark');
-  const [soundOn, setSoundOn] = useState(false);
   const lenisRef = useRef<Lenis | null>(null);
+  const pathname = usePathname();
+  const lastPath = useRef(pathname);
 
   // Sync with the pre-paint theme script and stored sound preference.
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync with DOM state set before hydration
     setTheme(readTheme());
-    try {
-      const on = localStorage.getItem(SOUND_KEY) === 'on';
-      setSoundOn(on);
-      setSoundEnabled(on);
-    } catch {
-      /* storage unavailable — keep defaults */
-    }
+    hydrateSoundPreferences();
   }, []);
+
+  // Route change: resync smooth scrolling with the new page and play the page cue.
+  useEffect(() => {
+    if (lastPath.current === pathname) return;
+    lastPath.current = pathname;
+    const lenis = lenisRef.current;
+    if (lenis) {
+      lenis.resize();
+      if (!window.location.hash) lenis.scrollTo(0, { immediate: true, force: true });
+    }
+    play('page');
+  }, [pathname]);
 
   // Follow OS theme changes until the visitor picks one explicitly.
   useEffect(() => {
@@ -95,7 +100,7 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
         setTheme(next);
       };
       const doc = document as Document & {
-        startViewTransition?: (cb: () => void) => { ready: Promise<void> };
+        startViewTransition?: (cb: () => void) => { ready: Promise<void>; finished: Promise<void> };
       };
       if (!doc.startViewTransition || reducedMotion) {
         apply();
@@ -104,7 +109,11 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
       const x = origin?.x ?? window.innerWidth - 40;
       const y = origin?.y ?? 40;
       const r = Math.hypot(Math.max(x, window.innerWidth - x), Math.max(y, window.innerHeight - y));
+      // Scopes the circle-reveal CSS to this transition only (route transitions keep theirs).
+      const root = document.documentElement;
+      root.classList.add('theme-transition');
       const transition = doc.startViewTransition(() => flushSync(apply));
+      transition.finished.finally(() => root.classList.remove('theme-transition')).catch(() => {});
       transition.ready
         .then(() => {
           document.documentElement.animate(
@@ -118,17 +127,6 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
     [reducedMotion],
   );
 
-  const toggleSound = useCallback(() => {
-    setSoundOn((prev) => {
-      const next = !prev;
-      setSoundEnabled(next);
-      try {
-        localStorage.setItem(SOUND_KEY, next ? 'on' : 'off');
-      } catch {}
-      if (next) play('tick');
-      return next;
-    });
-  }, []);
 
   const lockScroll = useCallback((locked: boolean) => {
     const lenis = lenisRef.current;
@@ -148,7 +146,7 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
     (target: string | HTMLElement | number) => {
       const lenis = lenisRef.current;
       if (lenis) {
-        lenis.scrollTo(target, { offset: typeof target === 'number' ? 0 : -64, duration: 1.4 });
+        lenis.scrollTo(target, { offset: typeof target === 'number' ? 0 : -96, duration: 1.4 });
         return;
       }
       if (typeof target === 'number') window.scrollTo({ top: target });
@@ -161,8 +159,8 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<Experience>(
-    () => ({ theme, toggleTheme, soundOn, toggleSound, play, reducedMotion, lockScroll, scrollTo }),
-    [theme, toggleTheme, soundOn, toggleSound, reducedMotion, lockScroll, scrollTo],
+    () => ({ theme, toggleTheme, play, reducedMotion, lockScroll, scrollTo }),
+    [theme, toggleTheme, reducedMotion, lockScroll, scrollTo],
   );
 
   return (

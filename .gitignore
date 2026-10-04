@@ -19,3 +19,4 @@ qa/screens/
 # misc
 .DS_Store
 npm-debug.log*
+.data/

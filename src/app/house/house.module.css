@@ -1,0 +1,26 @@
+.pieces {
+  padding-block: clamp(80px, 14vh, 160px);
+  border-top: 1px solid var(--line);
+}
+
+.head {
+  display: grid;
+  gap: 16px;
+  margin-bottom: clamp(40px, 8vh, 80px);
+}
+
+.title {
+  font-size: var(--step-4);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(20px, 3vw, 48px);
+}
+
+@media (max-width: 900px) {
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

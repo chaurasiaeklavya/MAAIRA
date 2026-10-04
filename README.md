@@ -1,95 +1,105 @@
-# MAAIRA FASHION BAGS: digital flagship (sample showcase edition)
+# MAAIRA FASHION BAGS: digital flagship
 
 The luxury storefront for **MAAIRA FASHION BAGS**, a brand of **Maanya Enterprises**, *Manufacturer of Luxury Designer Handbags*.
 
-This edition is a **client-presentation showcase**: an editorial home page, three sample pieces with an expandable detail view, minimal catalogue slides, and real contact paths. Commerce (cart, checkout, payments, accounts, admin) is deliberately out of scope until the showcase is approved. See `docs/requirements-traceability.md`.
+A multi-page editorial site with a working enquiry and callback backend. Product pages, a shop, the house story, editorial studies and client services are built around three sample pieces. **Selling is enquiry-led**: there is no cart or online payment until the business approves a sales model and a payment provider.
 
-> ⚠️ **Before presenting:** the product-image grouping is **provisional**. The build environment couldn't open the Cloudinary images, so the bags were grouped by filename sequence only. Review `src/data/products.ts` against the real photos first (see `docs/access-asset-readiness.md`).
+> ⚠️ **Before presenting:** the product-image grouping is **provisional**. The build environment could not open the Cloudinary photos, so bags were grouped by filename sequence only. Review `src/data/products.ts` against the real photos (see `docs/access-asset-readiness.md`).
 
 ## Quick start
 
 ```bash
 npm install
-npm run dev          # http://localhost:3000
-npm run build && npm start
+cp .env.example .env.local   # then fill in what you need (see "Enquiries" below)
+npm run dev                  # http://localhost:3000
+npm run build && npm start   # production
 ```
 
-Requires Node 20+ (developed on Node 22).
+Requires Node 22.6+ (developed on Node 22). The unit tests use Node's built-in TypeScript stripping.
 
 | Script | Purpose |
 |---|---|
-| `npm run dev` | Development server |
-| `npm run build` / `npm start` | Production build / serve |
+| `npm run dev` · `npm run build` · `npm start` | Develop · build · serve |
 | `npm run lint` · `npm run typecheck` | ESLint (Next core-web-vitals + TS) · TypeScript |
-| `npm run assets:brand` | Regenerate logo masks, icons and leather textures from the original logo |
-| `npm run qa:screens` | Playwright journeys and screenshots (server must be running). Add `-- --mock-images` where Cloudinary is unreachable. |
-| `node scripts/qa-a11y.mjs` | axe-core WCAG A/AA audit, both themes, home page + dialog |
-| `npm run build:single` | One self-contained `dist/maaira-showcase.html` (see below) |
-| `npm run qa:single` | Tests that file opened from disk (`file://`) with networking blocked |
+| `npm test` | Unit tests: enquiry validation, phone normalisation, rate limiter |
+| `npm run qa:screens` | Playwright journeys across 5 viewport/theme combinations plus reduced motion (server must be running with `ENQUIRY_STORE=file`). Add `-- --mock-images` where Cloudinary is unreachable. |
+| `npm run qa:a11y` | axe-core WCAG A/AA audit of every route, quick view and sound panel, both themes. Add `-- --admin=user:pass` to include the admin. |
+| `npm run assets:brand` | Regenerate logo masks, icons, leather textures and the heat-stamp texture from the original logo |
 
-Playwright scripts look for Chromium at `/opt/pw-browsers/chromium`. Change `executablePath` in the scripts if yours is elsewhere.
+## Routes
 
-## Updating products (the one file to edit)
+| Route | What it is |
+|---|---|
+| `/` | Hero (WebGL leather with a heat-stamped monogram), featured pieces, scroll study, house teaser, "in the round" 3D gallery, collection slides, enquiry band |
+| `/shop` | Editorial or grid view of the pieces, quick view (`?piece=no-02` deep links) |
+| `/shop/[slug]` | Product page: gallery (swipe, keys, zoom), every view, inline enquiry, more pieces, previous/next |
+| `/house` | Brand facts, credentials, identity study, pieces |
+| `/editorial` | Three campaign studies built from the authentic photos |
+| `/contact` | Enquiry and callback forms (`?mode=callback&piece=no-01` preselects) |
+| `/client-services` (+ `/shipping-returns`, `/privacy`, `/terms`) | FAQ and **draft** policy pages (clearly marked, `noindex`) |
+| `/admin/enquiries` | Protected enquiry review (HTTP Basic; disabled unless configured) |
+| `POST /api/enquiries` | Enquiry/callback endpoint |
 
-`src/data/products.ts` holds each sample piece: name, tagline, description, price, colour, stage background and image list. Images are referenced by ID from `src/data/asset-manifest.ts`, which records every supplied Cloudinary URL.
+## Enquiries & callbacks (backend)
 
-- **Price:** set `price: { amount: 24500, display: '₹24,500', status: 'client-approved' }`. The "to be confirmed" note disappears automatically.
-- **Colour:** set `colour: 'Espresso'`. The detail view shows the row only when a value is set.
-- **Images:** reorder or reassign `images: [{ assetId, role: 'primary' | 'angle' | 'detail', alt }]`. The first `primary` image becomes the card image.
-- **Background:** `stage: 'champagne-studio' | 'ivory-plaster' | 'espresso-leather'`.
-- **New image:** add one `asset(version, publicId)` line to the manifest.
+`POST /api/enquiries` validates on the server with the same rules the form uses in the browser (`src/lib/enquiry/schema.ts`). It rejects cross-site posts, wrong content types and oversized bodies. It rate-limits each IP (5 per 10 minutes by default) and catches bots with a honeypot field and a timing trap. Retries with the same idempotency key return the original reference. The form shows success **only** when the server returns a reference.
 
-Brand facts (contacts, credentials, WhatsApp flag) live in `src/data/brand.ts`.
+Choose where requests go in `.env.local` (see `.env.example`):
+
+1. **Supabase (recommended for hosted deployments):** apply `supabase/migrations/0001_enquiries.sql` (RLS on, no public access), then set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
+2. **File:** `ENQUIRY_STORE=file` writes JSON lines to `.data/enquiries.jsonl` (permissions 600). It works on a single long-running Node server; **don't use it on serverless hosts**, where the disk isn't durable.
+3. **Email notification (optional, in addition or alone):** `RESEND_API_KEY`, `ENQUIRY_NOTIFY_TO` and `ENQUIRY_NOTIFY_FROM`.
+
+With none configured, the endpoint answers `503 not_configured`. The form then says plainly that online requests aren't connected, and offers a pre-filled email and the phone number, so nothing the visitor typed is lost.
+
+**Admin:** set `ADMIN_USER` and `ADMIN_PASSWORD` (12+ characters) to enable `/admin/enquiries`. It lists requests with filters and per-row status updates (new, contacted, closed). Access is gated by `src/proxy.ts` and re-checked in every handler and server action. Without credentials the route returns 404.
+
+## Sound
+
+Sound is off by default and controlled from the header (sound on/off, optional ambience, volume). The engine is `src/lib/sound/engine.ts`. **No licensed audio has been supplied**, so the in-browser procedural fallbacks are used. To use real recordings, add files to `public/audio/` and flip `supplied: true` in `src/lib/sound/manifest.ts`; slots and formats are listed there. Unsupplied files are never requested.
+
+## Updating products
+
+`src/data/products.ts` holds each piece's name, tagline, description, price, colour, stage and images. Images reference `src/data/asset-manifest.ts`. Set a real price with `price: { amount: 24500, display: '₹24,500', status: 'client-approved' }`, and the "to be confirmed" note disappears. A `colour` value appears only once set. New pieces get a product page, shop card, ring plates and form option automatically.
 
 ## Project structure
 
 ```
 src/
-  app/                 layout (metadata, theme pre-paint script), page, global tokens
+  app/                    routes (pages, API, admin), layout, tokens, 404/error
   components/
-    hero/              WebGL leather surface + hero composition
-    showcase/          piece cards, material stages, section + URL state
-    detail/            full-screen piece dialog (gallery, zoom, swipe, enquiry)
-    collection/        editorial catalogue slides (pinned or carousel)
-    Header, House, Contact, Footer, Cursor, CloudImage, ExperienceProvider
-  data/                brand facts, asset manifest, products
-  lib/                 Cloudinary URLs, sound, cursor store, media query hook
-public/brand/          original logo (unmodified) + derived masks
-public/textures/       procedural leather grain (original work)
-scripts/               brand-asset builder, QA scripts
-docs/                  readiness report, data gaps, decisions, traceability
+    hero/                 WebGL leather + heat-stamped monogram
+    home/                 featured pieces, campaign study, 3D ring, enquiry band
+    product/              card, frame, product page
+    shop/ editorial/ house/ contact/ services/
+    detail/ gallery/      quick-view dialog, shared gallery
+    forms/                enquiry & callback form
+    sound/ motion/        sound control; reveal text, tilt
+  data/                   brand facts, products, asset manifest, site map
+  lib/                    enquiry schema, sound engine, server (store, notify, auth, rate limit)
+  proxy.ts                admin gate
+supabase/migrations/      enquiries table
+tests/                    unit tests
+scripts/                  brand assets, QA
+docs/                     audit, readiness, data gaps, decisions, traceability, master brief
 ```
 
 ## Behaviour notes
 
-- **Themes:** Espresso (dark) and Ivory (light). The first visit follows the OS setting; the choice persists in `localStorage` and is applied before first paint.
-- **Deep links:** `/?piece=no-02` opens a piece directly. Back and Forward open and close the dialog.
-- **Accessibility:** skip link, landmarks, a focus-trapped dialog with focus returned to the trigger, keyboard gallery (← →, Esc), 44px touch targets, and `prefers-reduced-motion` honoured everywhere (smooth scrolling, parallax, WebGL animation, particles and the custom cursor all switch off).
-- **Images:** Cloudinary `f_auto,q_auto:good` with a responsive `srcset`. If a transformed URL fails, the exact supplied URL is retried; if that fails too, a composed brand panel replaces the image.
-- **Security:** CSP and security headers (`next.config.ts`), no secrets in the client bundle, no forms or personal-data collection in this edition.
-
-## Single-file HTML (for sharing or offline review)
-
-`npm run build:single` writes **`dist/maaira-showcase.html`** (~1.4 MB), which opens by double-click with no server. Scripts, styles, fonts (Latin subsets), leather textures, logo masks and icons are all inlined. Product photos remain Cloudinary links, so they need an internet connection; offline, the brand panel shows in their place.
-
-When opened from disk, the address bar doesn't change on opening a piece (browsers restrict the History API on `file://`), so deep links work only on the hosted site.
-
-## Environment
-
-Copy `.env.example` to `.env.local`:
-
-| Variable | Meaning |
-|---|---|
-| `NEXT_PUBLIC_SITE_URL` | Canonical origin for metadata |
-| `NEXT_PUBLIC_ALLOW_INDEXING` | Leave `false` until real prices and data are approved |
+- **Themes:** Espresso (dark) and Ivory (light), applied before first paint and persisted.
+- **Transitions:** route changes use the View Transitions API (product images morph from card to product page; the header stays anchored). Reduced motion disables them along with smooth scrolling, parallax, WebGL animation, particles, the 3D ring's drift and the custom cursor.
+- **Images:** Cloudinary `f_auto,q_auto:good` with a responsive `srcset`. If that fails, the original URL is tried, then a brand panel is shown.
+- **Security:** CSP and security headers (`next.config.ts`), server-only secrets, validated input, rate limiting, and a noindex admin.
 
 ## Deployment
 
-Not deployed yet. This is a standard Next.js app: `npm run build`, then `npm start` on any Node host, or import the repo into Vercel. Set the variables above. No other services are needed for this edition.
+Not deployed from this environment (no hosting credentials). For Vercel, set the environment variables above and use **Supabase** (not the file store) for enquiries. Any Node host works with `npm run build && npm start`.
 
 ## Documentation
 
-- `docs/access-asset-readiness.md`: what could and couldn't be accessed, and the client actions needed
+- `docs/audit-2026-10.md`: design, motion, sound and backend audit (the starting point for this edition)
+- `docs/access-asset-readiness.md`: what could and couldn't be accessed
 - `docs/product-data-gaps.md`: missing product data and client questions
-- `docs/creative-technical-decisions.md`: concept, design system, motion and stack rationale
+- `docs/creative-technical-decisions.md`: concept, design system, motion, 3D, sound and stack rationale
 - `docs/requirements-traceability.md`: master-brief requirement status with evidence
+- `docs/MAAIRA_MASTER_PROMPT.md`: the master brief (source of truth)

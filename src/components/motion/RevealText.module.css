@@ -1,0 +1,13 @@
+.mask {
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: top;
+  /* room for descenders and italic overhang */
+  padding: 0.02em 0.06em 0.12em;
+  margin: -0.02em -0.06em -0.12em;
+}
+
+.word {
+  display: inline-block;
+  will-change: transform;
+}

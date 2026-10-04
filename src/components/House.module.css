@@ -44,7 +44,8 @@
 }
 
 .body {
-  grid-column: 8 / span 5;
+  grid-column: 9 / span 4;
+  grid-row: 1;
   display: grid;
   gap: 18px;
   align-self: end;
@@ -139,11 +140,35 @@
   .lead,
   .body {
     grid-column: 1 / -1;
+    grid-row: auto;
   }
   .credentials {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .tag {
     min-height: 160px;
   }
+}
+
+.more {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 16px;
+  min-height: 48px;
+  margin-top: 6px;
+  font-size: 0.76rem;
+  font-weight: 450;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: linear-gradient(currentColor, currentColor) 0 calc(100% - 10px) / 100% 1px no-repeat;
+}
+
+.more svg {
+  transition: transform 500ms var(--ease-out);
+}
+
+.more:hover svg {
+  transform: translateX(6px);
 }
