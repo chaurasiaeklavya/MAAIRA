@@ -1,0 +1,2 @@
+ALTER TABLE "orders" ADD COLUMN "source_cart_id" uuid;--> statement-breakpoint
+ALTER TABLE "orders" ADD CONSTRAINT "orders_source_cart_id_carts_id_fk" FOREIGN KEY ("source_cart_id") REFERENCES "public"."carts"("id") ON DELETE set null ON UPDATE no action;

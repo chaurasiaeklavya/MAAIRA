@@ -1,0 +1,2 @@
+ALTER TABLE "products" ADD COLUMN "stage" text DEFAULT 'ivory-plaster' NOT NULL;--> statement-breakpoint
+ALTER TABLE "products" ADD CONSTRAINT "product_stage_check" CHECK ("products"."stage" in ('champagne-studio', 'ivory-plaster', 'espresso-leather'));
