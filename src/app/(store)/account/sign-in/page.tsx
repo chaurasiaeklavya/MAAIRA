@@ -14,7 +14,7 @@ export default async function SignInPage({ searchParams }: { searchParams: Promi
   if (await currentUser()) redirect(next?.startsWith('/') && !next.startsWith('//') ? next : '/account');
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Account" title="Sign in" />
+      <PageHeader eyebrow="Account" title="Welcome *back*" />
       <div className={`container ${styles.wrap}`}>
         {authConfigured() ? (
           <div>

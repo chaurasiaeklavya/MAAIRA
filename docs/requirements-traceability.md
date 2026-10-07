@@ -25,8 +25,8 @@ Results are in the QA log at the end. "Passed" means implemented **and** tested;
 | R08 | Logo fidelity + palette | Passed | Unchanged from earlier editions (derived masks; original preserved). |
 | R09 | Typography & design system | Passed | Tokens + shared button/form patterns; storefront and admin consistent. |
 | R10 | Independently art-directed dark/light | Passed | Both themes on every page incl. 404 (theme re-applied after not-found renders); A11Y in both themes. |
-| R11 | Non-blocking entrance | Passed | "Shop bags" visible within 0.5 s; hero 86svh with products below; reduced-motion end states fixed. |
-| R12 | Purposeful motion + reduced motion | Passed | Spectacle removed from the shopping path; reveal bugs under reduced motion fixed (QA reduced run). |
+| R11 | Non-blocking entrance | Passed | Nothing gates the page: header navigation (incl. Shop, search, cart) is usable at once; the approved hero sequence (wordmark 1.25 s, "Explore the pieces" 2.15 s) plays over a scrollable page; reduced-motion end states fixed. Restored per `docs/regression-audit-2026-10-07.md`. |
+| R12 | Purposeful motion + reduced motion | Passed | Approved motion restored (Lenis, hero, masked reveals, card tilt/reveal, quick view, gallery ring, collection, leather menu, directional page transitions); all honour reduced motion (QA reduced run). |
 | R13 | WebGL only where justified | Passed | Single hero shader; no 3D on commerce paths. |
 | R14 | Authentic product imagery | Partial | Photos never altered; natural aspect ratio, never cropped in cards. No AI/background editing performed (images not accessible). |
 | R15 | Complete site architecture | Passed | Home, shop, categories, search, new arrivals (data-driven), PDP, cart, checkout, orders, account (sign-in/up/reset, addresses, orders), wishlist, about, editorial, contact, FAQ, 6 policy pages, 404/error, admin. |
@@ -83,13 +83,13 @@ Results are in the QA log at the end. "Passed" means implemented **and** tested;
 | R19 | Deployment readiness | Partial | Documented; not deployed |
 | R20 | Final production report | Complete | Final report to client |
 
-## QA log (2026-10-07, local production build, Chromium)
+## QA log (2026-10-07, local production build, Chromium — re-run after the regression correction, see `docs/regression-audit-2026-10-07.md`)
 
 | Suite | Result | Notes |
 |---|---|---|
 | `npm run typecheck` · `npm run lint` | Pass · Pass | — |
 | `npm run build` | Pass | Clean production build (Next.js 16) |
-| **UT** `npm test` | **31 / 31** pass | Discovery (filters, facets, typo search, related), cart validation and token isolation, guest→account cart merge, server totals, stock reservation, idempotent checkout, concurrent last-item race (no oversell), checkout readiness, payment amount/currency mismatch, duplicate settlement, expiry release, order state machine, order access (IDOR), DB rate limiter, Razorpay signature checks, test-API guard |
+| **UT** `npm test` | **33 / 33** pass | Discovery (filters, facets, typo search, related), cart validation and token isolation, guest→account cart merge, server totals, stock reservation, idempotent checkout, concurrent last-item race (no oversell), checkout readiness, payment amount/currency mismatch, duplicate settlement, expiry release, order state machine, order access (IDOR), DB rate limiter, Razorpay signature checks, test-API guard |
 | **E2E** `npm run test:e2e` | **60 / 60** pass | Desktop (1440) and mobile (390) shoppers: shop → filters → typo search → empty-category 404 → price-pending Enquire → cart → validation → server-recalculated totals → payment verified server-side → order *Paid*, stock decremented, header cart cleared, order page 404 without owner/token. Tampered ₹1 payment rejected; account registration, role lock, wishlist merge, customer 404 on /admin; staff readiness, state transition + audit actor, explicit price-approval confirmation. Razorpay is a local stand-in (no keys) |
 | Security probes (in E2E) | **17 / 17** pass | Injected total → 400 · quantity 11 / −5 → 400 · price-pending → 409 · client price field → 400 · missing Origin → 403 · cross-site → 403 · form-encoded enquiry → 415 · wishlist without session → 401 · malformed ids → 400 · forged payment signature → 400 · bad webhook signature → 400 · webhook replay ignored · no double-apply · /admin without session → redirect · cron without secret → 401 · DB total constraint |
 | **A11Y** `npm run qa:a11y -- --staff=…` | **0 violations** on 60 targets | 23 storefront targets (incl. filter sheet, cart drawer, mobile menu, callback form, 404) + 7 admin pages, each in dark and light; axe-core WCAG 2.0/2.1 A + AA, WCAG 2.2 AA and best-practice rules |

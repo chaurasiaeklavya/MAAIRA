@@ -18,7 +18,7 @@ export default async function CheckoutPage() {
   if (!readiness.ready) {
     return (
       <PageShell>
-        <PageHeader compact eyebrow="Checkout" title="Checkout" />
+        <PageHeader eyebrow="Checkout" title="Complete your *order*" />
         <CheckoutClosed />
       </PageShell>
     );
@@ -29,7 +29,7 @@ export default async function CheckoutPage() {
     : [];
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Checkout" title="Checkout" />
+      <PageHeader eyebrow="Checkout" title="Complete your *order*" />
       <CheckoutForm
         states={[...INDIAN_STATES]}
         shippingFee={formatPaise(settings.shippingFlatPaise ?? 0)}

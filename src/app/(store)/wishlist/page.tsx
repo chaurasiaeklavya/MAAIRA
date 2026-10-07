@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Wishlist', robots: { index: false, f
 export default function WishlistPage() {
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Wishlist" title="Saved pieces" />
+      <PageHeader eyebrow="Wishlist" title="Saved *pieces*" />
       <WishlistView />
     </PageShell>
   );

@@ -14,7 +14,7 @@ export default async function RegisterPage({ searchParams }: { searchParams: Pro
   if (await currentUser()) redirect('/account');
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Account" title="Create an account" />
+      <PageHeader eyebrow="Account" title="Create an *account*" />
       <div className={`container ${styles.wrap}`}>
         {authConfigured() ? <AuthForm mode="register" next={next} /> : <p>Accounts are not available yet.</p>}
         <aside className={styles.aside}>

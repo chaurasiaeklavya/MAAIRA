@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Returns & refunds', robots: { index:
 export default function ReturnsPage() {
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Client services" title="Returns & refunds" />
+      <PageHeader eyebrow="Client services" title="Returns &amp; *refunds*" />
       <ServiceLayout current="/client-services/returns">
         <DraftNotice />
         <h2>Return window</h2>

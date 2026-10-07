@@ -111,10 +111,11 @@ for (const c of COMBOS) {
     await menu.waitFor();
     const inside = await page.evaluate(() => !!document.activeElement?.closest('dialog[open]'));
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(400);
-    const closed = !(await menu.isVisible());
-    if (inside && closed) passes.push(`[${tag}] menu: focus contained, Escape closes`);
-    else problems.push(`[${tag}] menu focus/escape (inside=${inside}, closed=${closed})`);
+    // The leather menu closes with a 0.6 s reveal-out; it must be gone after that.
+    const closed = await menu.waitFor({ state: 'hidden', timeout: 1500 }).then(() => true, () => false);
+    const released = await page.evaluate(() => !document.querySelector('dialog[open]'));
+    if (inside && closed && released) passes.push(`[${tag}] menu: focus contained, Escape closes`);
+    else problems.push(`[${tag}] menu focus/escape (inside=${inside}, closed=${closed}, released=${released})`);
   }
 
   // Search from the header

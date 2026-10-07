@@ -38,7 +38,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
 
   return (
     <PageShell>
-      <PageHeader compact eyebrow={`Order ${order.number}`} title={STATUS_LABELS[status]} lede={MESSAGES[status]} />
+      <PageHeader eyebrow={`Order ${order.number}`} title={STATUS_LABELS[status]} lede={MESSAGES[status]} />
       {status === 'pending_payment' && <OrderAutoRefresh />}
       <CartSync token={status} />
       <div className={`container ${styles.layout}`}>

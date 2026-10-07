@@ -1,5 +1,6 @@
 'use client';
 
+import Lenis from 'lenis';
 import { MotionConfig } from 'motion/react';
 import { usePathname } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -14,7 +15,7 @@ interface Experience {
   toggleTheme: (origin?: { x: number; y: number }) => void;
   play: (name: Cue) => void;
   reducedMotion: boolean;
-  /** Lock page scrolling (e.g. while a full-screen layer is open). */
+  /** Pause/resume smooth scrolling and lock the page (e.g. while a full-screen layer is open). */
   lockScroll: (locked: boolean) => void;
   scrollTo: (target: string | HTMLElement | number) => void;
 }
@@ -32,6 +33,7 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
   // Hydration-safe: server and first client render agree on `false`, then sync.
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [theme, setTheme] = useState<Theme>('dark');
+  const lenisRef = useRef<Lenis | null>(null);
   const pathname = usePathname();
   const lastPath = useRef(pathname);
 
@@ -51,12 +53,43 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
     hydrateSoundPreferences();
   }, []);
 
-  // Route change: play the (optional) page cue.
+  // Route change: resync smooth scrolling with the new page and play the page cue.
   useEffect(() => {
     if (lastPath.current === pathname) return;
     lastPath.current = pathname;
+    const lenis = lenisRef.current;
+    if (lenis) {
+      lenis.resize();
+      if (!window.location.hash) lenis.scrollTo(0, { immediate: true, force: true });
+    }
     play('page');
   }, [pathname]);
+
+  // Smooth scrolling — desktop wheel only; touch keeps native momentum.
+  // Native dialogs (menu, search, cart, filters) scroll on their own and
+  // pause the page's smooth scroll while open.
+  useEffect(() => {
+    if (reducedMotion) return;
+    const lenis = new Lenis({
+      autoRaf: true,
+      lerp: 0.085,
+      smoothWheel: true,
+      anchors: { offset: -64 },
+      prevent: (node) => !!node.closest?.('dialog, [data-lenis-prevent]'),
+    });
+    lenisRef.current = lenis;
+    const sync = () => {
+      if (document.querySelector('dialog[open]') || document.documentElement.classList.contains('is-locked')) lenis.stop();
+      else lenis.start();
+    };
+    const mo = new MutationObserver(sync);
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ['open', 'class'], subtree: true });
+    return () => {
+      mo.disconnect();
+      lenis.destroy();
+      lenisRef.current = null;
+    };
+  }, [reducedMotion]);
 
   // Follow OS theme changes until the visitor picks one explicitly.
   useEffect(() => {
@@ -114,11 +147,14 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
   );
 
   const lockScroll = useCallback((locked: boolean) => {
+    const lenis = lenisRef.current;
     if (locked) {
+      lenis?.stop();
       const sbw = window.innerWidth - document.documentElement.clientWidth;
       document.documentElement.style.setProperty('--scrollbar-comp', `${sbw}px`);
       document.documentElement.classList.add('is-locked');
     } else {
+      lenis?.start();
       document.documentElement.classList.remove('is-locked');
       document.documentElement.style.removeProperty('--scrollbar-comp');
     }
@@ -126,8 +162,13 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
 
   const scrollTo = useCallback(
     (target: string | HTMLElement | number) => {
-      // Elements land just below the fixed header.
+      // Elements land just below the fixed header, with or without Lenis.
       const offset = typeof target === 'number' ? 0 : -96;
+      const lenis = lenisRef.current;
+      if (lenis) {
+        lenis.scrollTo(target, { offset, duration: 1.4 });
+        return;
+      }
       const el = typeof target === 'number' ? null : typeof target === 'string' ? document.querySelector(target) : target;
       if (typeof target !== 'number' && !el) return;
       const top = el ? window.scrollY + el.getBoundingClientRect().top + offset : (target as number);

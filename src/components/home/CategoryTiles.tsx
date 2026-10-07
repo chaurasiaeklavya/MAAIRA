@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { CloudImage } from '../CloudImage';
+import { RevealText } from '../motion/RevealText';
 import { Stage } from '../showcase/Stage';
 import type { CategorySummary } from '@/lib/catalogue/discovery';
 import { primaryImage } from '@/lib/catalogue/types';
@@ -16,15 +17,15 @@ export function CategoryTiles({ id, eyebrow, title, categories }: { id: string; 
     <section className={styles.section} aria-labelledby={id}>
       <div className="container">
         <p className="eyebrow">{eyebrow}</p>
-        <h2 id={id} className={`${styles.title} display`}>
+        <RevealText as="h2" id={id} className={`${styles.title} display`}>
           {title}
-        </h2>
+        </RevealText>
         <ul className={styles.grid}>
           {categories.map((c) => {
             const img = primaryImage(c.cover);
             return (
               <li key={c.term.id}>
-                <Link href={`/shop/${c.term.slug}`} className={styles.tile}>
+                <Link href={`/shop/${c.term.slug}`} className={styles.tile} transitionTypes={['nav-forward']}>
                   <span className={styles.media}>
                     <Stage preset={c.cover.stage} className={styles.stage} />
                     {img && (

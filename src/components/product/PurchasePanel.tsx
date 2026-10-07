@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { useCart } from '../commerce/CartProvider';
+import { useExperience } from '../ExperienceProvider';
 import { WishlistButton } from '../commerce/WishlistButton';
 import { BLOCKER_COPY, type PurchaseBlocker } from '@/lib/commerce/purchasable';
 import { brand } from '@/data/brand';
@@ -14,6 +16,7 @@ import styles from './ProductPage.module.css';
  */
 export function PurchasePanel({
   productId,
+  slug,
   name,
   price,
   purchasable,
@@ -21,6 +24,7 @@ export function PurchasePanel({
   maxQuantity,
 }: {
   productId: string;
+  slug: string;
   name: string;
   price: string;
   purchasable: boolean;
@@ -28,6 +32,7 @@ export function PurchasePanel({
   maxQuantity: number;
 }) {
   const { add, pending, error } = useCart();
+  const { scrollTo } = useExperience();
   const [qty, setQty] = useState(1);
   const mainRef = useRef<HTMLDivElement>(null);
   const [showBar, setShowBar] = useState(false);
@@ -41,21 +46,24 @@ export function PurchasePanel({
     return () => io.disconnect();
   }, []);
 
-  const enquire = () => document.getElementById('enquire')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const enquire = () => {
+    scrollTo('#enquire');
+    window.setTimeout(() => document.querySelector<HTMLElement>('#enquire input[name="name"]')?.focus({ preventScroll: true }), 900);
+  };
 
   const primary = purchasable ? (
-    <button type="button" className="btn btn--primary btn--block" onClick={() => add(productId, qty)} disabled={busy} aria-describedby={error ? 'purchase-error' : undefined}>
+    <button type="button" className={styles.primary} onClick={() => add(productId, qty)} disabled={busy} aria-describedby={error ? 'purchase-error' : undefined}>
       {busy ? 'Adding…' : 'Add to cart'}
     </button>
   ) : (
-    <button type="button" className="btn btn--primary btn--block" onClick={enquire}>
+    <button type="button" className={styles.primary} onClick={enquire}>
       Enquire about this piece
     </button>
   );
 
   return (
     <>
-      <div ref={mainRef} className={styles.purchase}>
+      <div ref={mainRef} className={styles.actions}>
         {purchasable && maxQuantity > 1 && (
           <label className={styles.qtyField}>
             <span>Quantity</span>
@@ -75,10 +83,19 @@ export function PurchasePanel({
             {error}
           </p>
         )}
+        {purchasable ? (
+          <button type="button" className={styles.secondary} onClick={enquire}>
+            Enquire about this piece
+          </button>
+        ) : (
+          <Link href={`/contact?mode=callback&piece=${slug}`} className={styles.secondary} transitionTypes={['nav-forward']}>
+            Request a callback
+          </Link>
+        )}
         <div className={styles.secondaryActions}>
           <WishlistButton productId={productId} name={name} withLabel />
-          <a href={brand.contact.phoneHref} className={styles.call}>
-            Call {brand.contact.phoneDisplay}
+          <a href={brand.contact.phoneHref} className={styles.tertiary}>
+            or call {brand.contact.phoneDisplay}
           </a>
         </div>
       </div>

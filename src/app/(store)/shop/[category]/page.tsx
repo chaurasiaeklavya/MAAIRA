@@ -44,9 +44,8 @@ export default async function CategoryPage({
   return (
     <PageShell>
       <PageHeader
-        compact
         eyebrow={eyebrow}
-        title={category.term.label}
+        title={`*${category.term.label}*`}
         lede={category.term.description ?? undefined}
         crumbs={[
           { href: '/shop', label: 'Shop' },

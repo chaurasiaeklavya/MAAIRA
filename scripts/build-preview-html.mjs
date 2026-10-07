@@ -8,9 +8,14 @@
  *   npm run build:preview -- --base=http://localhost:3000 --out=dist/x.html
  *
  * The file is a snapshot of the running store: pages are rendered by the
- * real app (reduced motion, so every reveal is at its end state), then
- * stitched together with a small script for page navigation, theme, menu
- * and dialogs, photo galleries and the enquiry form's modes. Anything that
+ * real app with its motion running, then stitched together with a small
+ * script that replays that motion — entrance reveals (from the exact start
+ * styles the app used), scroll-linked effects (sampled from the live page and
+ * re-mapped to the visitor's viewport), the gallery ring, page fades, the
+ * hide-on-scroll header and the theme reveal — plus navigation, menu and
+ * dialogs, photo galleries, layout toggle and the enquiry form's modes. The
+ * WebGL hero is the one effect not carried: the file shows the hero's own
+ * leather fallback. Anything that
  * needs the server — cart, checkout, accounts, search, wishlist, sending an
  * enquiry — says so instead of pretending; the enquiry form offers to email
  * the visitor's details instead, exactly as the live form does when it
@@ -51,9 +56,25 @@ const normalise = (p) => (p.length > 1 ? p.replace(/\/+$/, '') : '/');
 async function capture(route) {
   const context = await browser.newContext({
     viewport: { width: 1440, height: 900 },
-    reducedMotion: 'reduce',
+    reducedMotion: 'no-preference',
     colorScheme: 'dark',
     serviceWorkers: 'block',
+  });
+  // Record the start style of everything the app animates in: the first time
+  // an element's inline style changes, its previous (server-rendered) value is
+  // the reveal's starting point. The file replays from it.
+  await context.addInitScript(() => {
+    const REVEAL = /opacity:\s*0(?:\.\d+)?\s*(?:;|$)|clip-path|translate|blur\(|scale/;
+    const seen = new WeakSet();
+    new MutationObserver((muts) => {
+      for (const m of muts) {
+        const el = m.target;
+        if (seen.has(el)) continue;
+        seen.add(el);
+        const old = m.oldValue || '';
+        if (REVEAL.test(old) && old !== el.getAttribute('style')) el.setAttribute('data-pv-from', old);
+      }
+    }).observe(document, { attributes: true, attributeFilter: ['style'], attributeOldValue: true, subtree: true });
   });
   const page = await context.newPage();
   await page.route('https://res.cloudinary.com/**', (r) => r.fulfill({ status: 200, contentType: 'image/jpeg', body: card }));
@@ -68,15 +89,18 @@ async function capture(route) {
     return { route, skipped: `HTTP ${status}${finalPath !== route ? ` → ${finalPath}` : ''}` };
   }
   await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => {});
+  // Let the entrance play, then walk the page so every in-view reveal runs.
+  await page.waitForTimeout(3500);
   await page.evaluate(async () => {
     await document.fonts.ready;
-    for (let y = 0; y < document.documentElement.scrollHeight; y += 500) {
+    for (let y = 0; y < document.documentElement.scrollHeight; y += 300) {
       window.scrollTo(0, y);
-      await new Promise((r) => setTimeout(r, 30));
+      await new Promise((r) => setTimeout(r, 140));
     }
-    window.scrollTo(0, 0);
   });
-  await page.waitForTimeout(700);
+  await page.waitForTimeout(2500);
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.waitForTimeout(1500);
 
   const data = await page.evaluate(async ({ withChrome }) => {
     const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -107,6 +131,86 @@ async function capture(route) {
       c.querySelectorAll('[data-scrolled]').forEach((x) => x.removeAttribute('data-scrolled'));
       if (c.matches?.('dialog[open]')) c.removeAttribute('open');
       return c;
+    }
+
+    const frame = () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(r)));
+
+    // Scroll-linked effects: sample every styled element of the page while
+    // scrolling; whatever changes with scroll is stored as keyframes against
+    // its section's travel through the viewport (t = 0 entering, 1 leaving).
+    const ring = document.querySelector('main section[aria-labelledby="ring-title"]');
+    const tracked = [...document.querySelectorAll('main [style]')].filter((el) => !ring?.contains(el));
+    const scrollFx = {};
+    {
+      const vh = window.innerHeight;
+      const max = document.documentElement.scrollHeight - vh;
+      const boxes = tracked.map((el) => {
+        const sec = el.closest('section') ?? document.querySelector('main');
+        const r = sec.getBoundingClientRect();
+        return { top: r.top + window.scrollY, height: r.height };
+      });
+      // Inline style plus computed values: the app drives some scroll-linked
+      // opacity/transform through native scroll timelines, which never touch
+      // the style attribute.
+      const PROPS = [
+        ['opacity', 'opacity'],
+        ['transform', 'transform'],
+        ['filter', 'filter'],
+        ['clipPath', 'clip-path'],
+      ];
+      const read = (el) => {
+        const cs = getComputedStyle(el);
+        return [el.getAttribute('style') || '', ...PROPS.map(([p]) => (p === 'transform' && cs[p] === 'none' ? 'matrix(1, 0, 0, 1, 0, 0)' : cs[p]))];
+      };
+      const samples = tracked.map(() => []);
+      for (let y = 0; y <= max + 79; y += 80) {
+        const yy = Math.min(y, max);
+        window.scrollTo(0, yy);
+        await frame();
+        await sleep(16);
+        tracked.forEach((el, i) => {
+          const b = boxes[i];
+          const t = (yy - b.top + vh) / (b.height + vh);
+          samples[i].push([Math.round(t * 10000) / 10000, read(el)]);
+        });
+      }
+      window.scrollTo(0, 0);
+      await frame();
+      await sleep(600);
+      let sid = 0;
+      tracked.forEach((el, i) => {
+        const s = samples[i];
+        const varies = s[0][1].map((_, k) => s.some(([, v]) => v[k] !== s[0][1][k]));
+        if (!varies.some(Boolean)) return;
+        const base = s[0][1][0];
+        const styleAt = (v) =>
+          [varies[0] ? v[0] : base, ...PROPS.map(([, css], k) => (varies[k + 1] ? `${css}: ${v[k + 1]}` : null)).filter(Boolean)]
+            .filter(Boolean)
+            .join('; ');
+        const flat = s.map(([t, v]) => [t, styleAt(v)]);
+        // Keep only the change points (and their neighbours).
+        const kf = flat.filter((pt, j) => j === 0 || j === flat.length - 1 || pt[1] !== flat[j - 1][1] || pt[1] !== flat[j + 1][1]);
+        el.dataset.pvSid = String(sid);
+        scrollFx[sid++] = kf;
+      });
+    }
+
+    // Gallery ring: the caption for each plate, read with the plate in front.
+    let ringCaptions = null;
+    if (ring) {
+      const links = [...ring.querySelectorAll('li a')];
+      const caption = ring.querySelector('[aria-live="polite"]');
+      ringCaptions = [];
+      for (const a of links) {
+        a.focus({ preventScroll: true });
+        await sleep(1400);
+        ringCaptions.push(caption?.innerHTML ?? '');
+      }
+      links[0]?.focus({ preventScroll: true });
+      await sleep(1400);
+      links[0]?.blur();
+      window.scrollTo(0, 0);
+      await frame();
     }
 
     // Which button opens which dialog (keyed so the same dialog matches on every page).
@@ -167,6 +271,35 @@ async function capture(route) {
       forms.push(variants);
     }
 
+    // Layout toggle (shop): the whole listing in each layout.
+    const layouts = [];
+    const layoutButtons = () => [...document.querySelectorAll('main [role="group"][aria-label="Layout"] button')];
+    if (layoutButtons().length) {
+      const initial = Math.max(0, layoutButtons().findIndex((b) => b.getAttribute('aria-pressed') === 'true'));
+      for (let li = 0; li < layoutButtons().length; li++) {
+        layoutButtons()[li].click();
+        await settle(1200);
+        // Let every card in this layout play its reveal before capturing it.
+        for (let y = 0; y < document.documentElement.scrollHeight; y += 300) {
+          window.scrollTo(0, y);
+          await sleep(120);
+        }
+        await settle(1500);
+        window.scrollTo(0, 0);
+        await sleep(400);
+        layouts.push(clean(document.querySelector('main#main')).innerHTML);
+      }
+      layoutButtons()[initial].click();
+      await settle(1200);
+      for (let y = 0; y < document.documentElement.scrollHeight; y += 300) {
+        window.scrollTo(0, y);
+        await sleep(120);
+      }
+      await settle(1500);
+      window.scrollTo(0, 0);
+      await sleep(400);
+    }
+
     const main = clean(document.querySelector('main#main'));
     const out = {
       title: document.title,
@@ -178,6 +311,9 @@ async function capture(route) {
       inlineStyles: [...document.querySelectorAll('head style')].map((st) => st.textContent),
       galleries,
       forms,
+      layouts,
+      scrollFx,
+      ringCaptions,
     };
 
     if (withChrome) {
@@ -338,6 +474,16 @@ for (const [route, p] of [...pages, [NOT_FOUND, notFound]]) {
     for (const [i, frame] of frames.entries()) templates.push(`<template data-pv-frame="${esc(`${route}|${gi}|${i}`)}">${await fixMarkup(frame)}</template>`);
   for (const [fi, variants] of p.forms.entries())
     for (const [mi, form] of variants.entries()) templates.push(`<template data-pv-variant="${esc(`${route}|${fi}|${mi}`)}">${await fixMarkup(form)}</template>`);
+  for (const [li, layout] of p.layouts.entries()) templates.push(`<template data-pv-layout="${esc(`${route}|${li}`)}">${await fixMarkup(layout)}</template>`);
+}
+
+// Motion data per page: scroll-linked keyframes and the ring's captions.
+const motionData = {};
+for (const [route, p] of [...pages, [NOT_FOUND, notFound]]) {
+  const entry = {};
+  if (Object.keys(p.scrollFx).length) entry.scroll = p.scrollFx;
+  if (p.ringCaptions?.length) entry.ring = await Promise.all(p.ringCaptions.map((c) => fixMarkup(c)));
+  if (Object.keys(entry).length) motionData[route] = entry;
 }
 
 const config = {
@@ -389,6 +535,7 @@ ${iconTag}
 ${body}
 ${templates.join('\n')}
 <script type="application/json" id="pv-config">${JSON.stringify(config).replace(/</g, '\\u003c')}</script>
+<script type="application/json" id="pv-motion">${JSON.stringify(motionData).replace(/</g, '\\u003c')}</script>
 <script>${runtime}</script>
 </body>
 </html>
@@ -406,7 +553,10 @@ console.log(`Wrote ${path.relative(process.cwd(), TARGET)} (${(Buffer.byteLength
 if (!args['no-check']) {
   const problems = [];
   // An element frozen at opacity 0 means a transition was captured mid-way.
-  const hidden = [...html.matchAll(/<[a-z]+ class="([^"]*)"[^>]*style="[^"]*opacity: ?0[;"]/g)].map((m) => m[1]);
+  // (Scroll-linked elements and reveal start points are expected to be hidden at times.)
+  const hidden = [...html.matchAll(/<[a-z]+ class="([^"]*)"[^>]*style="[^"]*opacity: ?0[;"][^>]*>/g)]
+    .filter((m) => !/data-pv-sid=|data-pv-from=/.test(m[0]))
+    .map((m) => m[1]);
   if (hidden.length) problems.push(`captured mid-transition (opacity 0): ${[...new Set(hidden)].join(', ')}`);
   const context = await browser.newContext({ viewport: { width: 390, height: 844 } });
   const page = await context.newPage();
@@ -424,6 +574,22 @@ if (!args['no-check']) {
   for (const route of [...pages.keys(), NOT_FOUND]) {
     await page.evaluate((r) => (location.hash = r === '/' ? '#/' : `#${r}`), route);
     await page.waitForTimeout(150);
+    // Scroll through like a visitor; every reveal must have played by the end.
+    await page.evaluate(async () => {
+      for (let y = 0; y < document.documentElement.scrollHeight; y += 250) {
+        window.scrollTo(0, y);
+        await new Promise((r) => setTimeout(r, 30));
+      }
+    });
+    await page.waitForTimeout(1600);
+    const stuck = await page.evaluate(() =>
+      [...document.querySelectorAll('main [data-pv-from]')].filter((el) => {
+        const b = el.getBoundingClientRect();
+        return b.width > 0 && b.height > 0 && !el.hasAttribute('data-pv-sid') && Number(getComputedStyle(el).opacity) < 0.05 && !el.closest('[aria-hidden="true"]');
+      }).length,
+    );
+    if (stuck) problems.push(`${route}: ${stuck} element(s) never revealed`);
+    await page.evaluate(() => window.scrollTo(0, 0));
     const r = await page.evaluate(() => ({
       route: document.querySelector('main#main')?.dataset.pvRoute,
       h1: document.querySelectorAll('main h1').length,
@@ -446,17 +612,16 @@ if (!args['no-check']) {
     return open;
   });
   if (!menuOk) problems.push('menu dialog did not open');
-  const themeOk = await page.evaluate(() => {
-    const before = document.documentElement.dataset.theme;
-    document.querySelector('button[aria-label^="Switch to"]')?.click();
-    return before !== document.documentElement.dataset.theme;
-  });
+  const themeBefore = await page.evaluate(() => document.documentElement.dataset.theme);
+  await page.evaluate(() => document.querySelector('button[aria-label^="Switch to"]')?.click());
+  await page.waitForTimeout(1200); // the circular theme reveal runs first
+  const themeOk = themeBefore !== (await page.evaluate(() => document.documentElement.dataset.theme));
   if (!themeOk) problems.push('theme toggle did not change the theme');
   // Product page: the sticky purchase bar appears (with its button) once the panel scrolls away.
   const product = [...pages.keys()].find((r) => r.startsWith('/products/'));
   if (product) {
     await page.evaluate((r) => (location.hash = `#${r}`), product);
-    await page.waitForTimeout(150);
+    await page.waitForTimeout(900);
     // Scroll as a person would, so the panel passes through the viewport.
     await page.evaluate(async () => {
       for (let y = 0; y < document.documentElement.scrollHeight / 2; y += 200) {
@@ -493,6 +658,283 @@ function previewRuntime() {
   const header = document.querySelector('header');
   const PREVIEW = 'this file is an offline preview of the store.';
   let lastHash = null;
+
+  /* ---------- motion, replayed from the live app ---------- */
+  const motionData = JSON.parse(document.getElementById('pv-motion').textContent);
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
+  const EASE_IO = 'cubic-bezier(0.65, 0, 0.35, 1)';
+  const parseStyle = (str) => {
+    const d = document.createElement('div');
+    d.setAttribute('style', str);
+    return d.style;
+  };
+
+  // Entrance reveals: each element starts from the exact style the app
+  // rendered first, and plays to its final style when it enters the view.
+  const REVEAL_PROPS = ['opacity', 'transform', 'clipPath', 'filter'];
+  const pendingReveals = new Map();
+  let revealIO = null;
+  function setupReveals(scope, stagger = 70) {
+    if (reduced || !('IntersectionObserver' in window)) return;
+    if (!revealIO) {
+      revealIO = new IntersectionObserver(
+        (entries) => {
+          let i = 0;
+          for (const e of entries) {
+            if (!e.isIntersecting) continue;
+            revealIO.unobserve(e.target);
+            const job = pendingReveals.get(e.target);
+            if (!job) continue;
+            pendingReveals.delete(e.target);
+            const { from, to, step } = job;
+            const clip = 'clipPath' in from;
+            Object.assign(e.target.style, to);
+            e.target.animate([from, to], {
+              duration: clip ? 1250 : 1000,
+              delay: Math.min(i++ * step, 1100),
+              easing: clip ? EASE_IO : EASE,
+              fill: 'backwards',
+            });
+          }
+        },
+        { rootMargin: '0px 0px -6% 0px' },
+      );
+    }
+    for (const el of scope.querySelectorAll('[data-pv-from]')) {
+      if (el.hasAttribute('data-pv-sid')) continue; // scroll-linked: driven below
+      const start = parseStyle(el.getAttribute('data-pv-from'));
+      const from = {};
+      const to = {};
+      for (const p of REVEAL_PROPS) {
+        if (!start[p]) continue;
+        let v = el.style[p];
+        if (p === 'clipPath' && (!v || v === 'none')) v = 'inset(0% 0% 0% 0%)';
+        if (p === 'filter' && (!v || v === 'none')) v = 'blur(0px)';
+        if (p === 'opacity' && !v) v = '1';
+        if (p === 'transform' && !v) v = 'none';
+        if (v === start[p]) continue;
+        from[p] = start[p];
+        to[p] = v;
+      }
+      if (!Object.keys(from).length) continue;
+      Object.assign(el.style, from);
+      pendingReveals.set(el, { from, to, step: stagger });
+      revealIO.observe(el);
+    }
+  }
+
+  // Scroll-linked effects: keyframes sampled from the live page against each
+  // section's travel through the viewport, interpolated on scroll.
+  let fxItems = [];
+  const NUM = /-?\d*\.?\d+(?:e-?\d+)?/g;
+  function lerpStyle(a, b, t) {
+    if (a === b) return a;
+    const na = a.match(NUM) || [];
+    const nb = b.match(NUM) || [];
+    const sa = a.split(NUM);
+    const sb = b.split(NUM);
+    if (na.length !== nb.length || sa.join('\u0000') !== sb.join('\u0000')) return t < 0.5 ? a : b;
+    let out = sa[0];
+    for (let i = 0; i < na.length; i++) out += String(+(+na[i] + (+nb[i] - +na[i]) * t).toFixed(4)) + sa[i + 1];
+    return out;
+  }
+  function measureFx() {
+    for (const it of fxItems) {
+      const r = it.sec.getBoundingClientRect();
+      it.top = r.top + window.scrollY;
+      it.height = r.height;
+    }
+  }
+  function applyScrollFx() {
+    const vh = window.innerHeight;
+    const y = window.scrollY;
+    for (const it of fxItems) {
+      const t = (y - it.top + vh) / (it.height + vh);
+      const f = it.frames;
+      let i = 0;
+      while (i < f.length - 1 && f[i + 1][0] <= t) i++;
+      const [t0, s0] = f[i];
+      const nxt = f[i + 1];
+      const style = !nxt || t <= t0 ? s0 : lerpStyle(s0, nxt[1], Math.min(1, (t - t0) / (nxt[0] - t0)));
+      if (it.el.getAttribute('style') !== style) it.el.setAttribute('style', style);
+    }
+  }
+  function setupScrollFx(route) {
+    const table = (motionData[route] && motionData[route].scroll) || {};
+    fxItems = Object.entries(table)
+      .map(([sid, frames]) => {
+        const el = main.querySelector(`[data-pv-sid="${sid}"]`);
+        return el ? { el, frames, sec: el.closest('section') || main, top: 0, height: 1 } : null;
+      })
+      .filter(Boolean);
+    measureFx();
+    applyScrollFx();
+  }
+  let fxRaf = 0;
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (!fxRaf)
+        fxRaf = requestAnimationFrame(() => {
+          fxRaf = 0;
+          applyScrollFx();
+        });
+    },
+    { passive: true },
+  );
+  window.addEventListener('resize', () => {
+    measureFx();
+    applyScrollFx();
+  });
+  if ('ResizeObserver' in window)
+    new ResizeObserver(() => {
+      measureFx();
+      applyScrollFx();
+    }).observe(main);
+
+  // The gallery ring: drifts while in view, turns with the arrows or a drag.
+  let ringState = null;
+  function setupRing(route) {
+    if (ringState) ringState.stop();
+    ringState = null;
+    const caps = motionData[route] && motionData[route].ring;
+    const section = main.querySelector('section[aria-labelledby="ring-title"]');
+    const list = section && section.querySelector('ul');
+    if (!caps || !list) return;
+    const plates = [...list.children];
+    const N = plates.length;
+    const step = 360 / N;
+    const m = /translateZ\((-?[\d.]+)px\)\s*rotateY\((-?[\d.]+)deg\)/.exec(list.style.transform || '');
+    const radius = m ? -parseFloat(m[1]) : 320;
+    let rot = m ? parseFloat(m[2]) : 0;
+    let target = null;
+    let paused = false;
+    let visible = false;
+    let drag = null;
+    let raf = 0;
+    let last = 0;
+    let active = -1;
+    let suppressClick = false;
+    const caption = section.querySelector('[aria-live="polite"]');
+    const shades = plates.map((li) => li.querySelector('[class*="__shade"]'));
+    const mod = (n, k) => ((n % k) + k) % k;
+    const draw = () => {
+      list.style.transform = `translateZ(${-radius}px) rotateY(${rot}deg)`;
+      shades.forEach((sh, i) => {
+        if (!sh) return;
+        const facing = Math.cos(((i * step + rot) * Math.PI) / 180);
+        sh.style.opacity = String(0.72 * (1 - (facing + 1) / 2));
+      });
+      const a = mod(Math.round(-rot / step), N);
+      if (a !== active && caption) {
+        active = a;
+        caption.innerHTML = caps[a] || '';
+      }
+    };
+    const tick = (now) => {
+      raf = 0;
+      const dt = Math.min(50, last ? now - last : 16);
+      last = now;
+      if (target !== null) {
+        rot += (target - rot) * Math.min(1, dt / 110);
+        if (Math.abs(target - rot) < 0.05) {
+          rot = target;
+          target = null;
+        }
+      } else if (!paused && visible && !reduced && !drag) rot -= dt * 0.0055;
+      draw();
+      if (visible || target !== null) raf = requestAnimationFrame(tick);
+    };
+    const kick = () => {
+      if (!raf) {
+        last = 0;
+        raf = requestAnimationFrame(tick);
+      }
+    };
+    const io = new IntersectionObserver(
+      ([e]) => {
+        visible = e.isIntersecting;
+        if (visible) kick();
+      },
+      { rootMargin: '-20% 0px' },
+    );
+    io.observe(section);
+    const stage = list.parentElement;
+    const onDown = (e) => {
+      if (e.button !== 0) return;
+      drag = { x: e.clientX, start: rot, moved: false };
+      target = null;
+    };
+    const onMove = (e) => {
+      if (!drag) return;
+      const dx = e.clientX - drag.x;
+      if (!drag.moved && Math.abs(dx) > 6) {
+        drag.moved = true;
+        stage.setPointerCapture?.(e.pointerId);
+      }
+      if (!drag.moved) return;
+      rot = drag.start + dx * (180 / Math.max(320, (radius / 2) * 3));
+      draw();
+    };
+    const onUp = () => {
+      if (drag && drag.moved) {
+        suppressClick = true;
+        setTimeout(() => (suppressClick = false), 50);
+        target = Math.round(rot / step) * step;
+        kick();
+      }
+      drag = null;
+    };
+    stage.addEventListener('pointerdown', onDown);
+    stage.addEventListener('pointermove', onMove);
+    stage.addEventListener('pointerup', onUp);
+    stage.addEventListener('pointercancel', onUp);
+    stage.addEventListener('click', (e) => suppressClick && (e.preventDefault(), e.stopPropagation()), true);
+    section.addEventListener('pointerenter', () => (paused = true));
+    section.addEventListener('pointerleave', () => ((paused = false), onUp()));
+    section.addEventListener('focusin', (e) => {
+      paused = true;
+      const li = e.target.closest && e.target.closest('li');
+      const i = plates.indexOf(li);
+      if (i >= 0) {
+        const base = -i * step;
+        target = base + Math.round((rot - base) / 360) * 360;
+        kick();
+      }
+    });
+    section.addEventListener('focusout', () => (paused = false));
+    ringState = {
+      stepBy(dir) {
+        target = Math.round(rot / step) * step - dir * step;
+        kick();
+      },
+      stop() {
+        io.disconnect();
+        cancelAnimationFrame(raf);
+      },
+    };
+    draw();
+  }
+
+  // Layout toggle (shop): swap to the captured layout, keep the scroll.
+  function swapLayout(index) {
+    const tpl = document.querySelector(`template[data-pv-layout="${CSS.escape(`${main.dataset.pvRoute}|${index}`)}"]`);
+    if (!tpl) return;
+    const y = window.scrollY;
+    main.replaceChildren(tpl.content.cloneNode(true));
+    window.scrollTo(0, y);
+    afterContent(main.dataset.pvRoute, 60);
+    main.querySelectorAll('[aria-label="Layout"] button')[index]?.focus({ preventScroll: true });
+  }
+
+  function afterContent(route, stagger) {
+    sweepImages(main);
+    wireStickyBars();
+    setupReveals(main, stagger);
+    setupScrollFx(route);
+    setupRing(route);
+  }
 
   main.tabIndex = -1;
 
@@ -553,13 +995,13 @@ function previewRuntime() {
       });
     }
     applyParams(r);
-    sweepImages(main);
-    wireStickyBars();
     lastHash = location.hash || '#/';
     if (!initial) {
       window.scrollTo(0, 0);
       main.focus({ preventScroll: true });
+      if (!reduced) main.animate([{ opacity: 0, transform: 'translateY(14px)' }, { opacity: 1, transform: 'none' }], { duration: 650, easing: EASE });
     }
+    afterContent(main.dataset.pvRoute, initial && r.path === '/' ? 140 : 70);
   }
   function applyParams(r) {
     const form = main.querySelector('form[data-pv-form]');
@@ -624,6 +1066,7 @@ function previewRuntime() {
     const next = tpl.content.firstElementChild.cloneNode(true);
     section.replaceWith(next);
     sweepImages(next);
+    setupReveals(next, 0);
     if (focusSel) next.querySelector(focusSel)?.focus();
   }
   function swapForm(form, modeIndex) {
@@ -636,6 +1079,7 @@ function previewRuntime() {
       if (from && to && 'value' in from && 'value' in to && from.value) to.value = from.value;
     }
     form.replaceWith(next);
+    setupReveals(next, 40);
     next.querySelectorAll('[aria-label="Type of request"] button')[modeIndex]?.focus();
   }
 
@@ -680,7 +1124,35 @@ function previewRuntime() {
 
     if (btn.dataset.pvOpens) return openDialog(btn.dataset.pvOpens);
     if (btn.closest('dialog') && (/close/i.test(btn.className) || /^close\b/i.test(label))) return btn.closest('dialog').close();
-    if (/^Switch to (light|dark) theme$/.test(label)) return setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark');
+    if (/^Switch to (light|dark) theme$/.test(label)) {
+      const next = root.dataset.theme === 'dark' ? 'light' : 'dark';
+      if (!document.startViewTransition || reduced) return setTheme(next);
+      const r = btn.getBoundingClientRect();
+      const x = r.left + r.width / 2;
+      const y = r.top + r.height / 2;
+      const R = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y));
+      root.classList.add('theme-transition');
+      const vt = document.startViewTransition(() => setTheme(next));
+      vt.finished.finally(() => root.classList.remove('theme-transition')).catch(() => {});
+      vt.ready
+        .then(() =>
+          root.animate({ clipPath: [`circle(0px at ${x}px ${y}px)`, `circle(${R}px at ${x}px ${y}px)`] }, { duration: 760, easing: EASE_IO, pseudoElement: '::view-transition-new(root)' }),
+        )
+        .catch(() => {});
+      return;
+    }
+    if (label === 'Turn to previous view' && ringState) return ringState.stepBy(-1);
+    if (label === 'Turn to next view' && ringState) return ringState.stepBy(1);
+    if (/^Quick view/.test(label)) {
+      const link = btn.closest('article')?.querySelector('a[href^="#/products/"]');
+      if (link) location.hash = link.getAttribute('href');
+      return;
+    }
+    const layoutGroup = btn.closest('[aria-label="Layout"]');
+    if (layoutGroup) {
+      if (btn.getAttribute('aria-pressed') !== 'true') swapLayout([...layoutGroup.querySelectorAll('button')].indexOf(btn));
+      return;
+    }
 
     const gallery = btn.closest('[data-pv-gallery]');
     if (gallery) {
@@ -860,7 +1332,7 @@ function previewRuntime() {
           if (!e.isIntersecting && e.boundingClientRect.top < 0) {
             bar.setAttribute('data-show', '');
             bar.setAttribute('aria-hidden', 'false');
-            const primary = e.target.querySelector('.btn--primary');
+            const primary = e.target.querySelector('button[class*="__primary"], .btn--primary');
             if (action && primary && !action.firstElementChild) action.append(primary.cloneNode(true));
           } else {
             bar.removeAttribute('data-show');
@@ -880,10 +1352,15 @@ function previewRuntime() {
   }
 
   /* header state on scroll */
+  let lastY = window.scrollY;
   const onScroll = () => {
     if (!header) return;
-    if (window.scrollY > 24) header.setAttribute('data-scrolled', '');
+    const y = window.scrollY;
+    if (y > 40) header.setAttribute('data-scrolled', '');
     else header.removeAttribute('data-scrolled');
+    if (y > 480 && y > lastY + 2) header.setAttribute('data-hidden', '');
+    else if (y < lastY - 2 || y <= 480) header.removeAttribute('data-hidden');
+    lastY = y;
   };
   window.addEventListener('scroll', onScroll, { passive: true });
 

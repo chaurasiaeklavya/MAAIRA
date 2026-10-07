@@ -8,20 +8,20 @@
 | Area (before) | Decision | Why | Result (after) |
 |---|---|---|---|
 | Brand identity, tokens, two themes (`globals.css`) | **Keep** | Solid, tested contrast in both themes | Extended with `.btn` / form patterns |
-| WebGL heat-stamped hero (`hero/LeatherCanvas.tsx`) | **Improve** | Signature brand moment, but CTAs appeared after ~2.2 s and the hero filled 100svh | Copy now "Luxury bags, made to be carried" + **Shop bags** within 0.5 s; 86svh so products start above the fold |
+| WebGL heat-stamped hero (`hero/LeatherCanvas.tsx`) | **Improve** | Signature brand moment, but CTAs appeared after ~2.2 s and the hero filled 100svh | Copy now "Luxury bags, made to be carried" + **Shop bags** within 0.5 s; 86svh so products start above the fold  **Reversed 2026-10-07 — restored; see `docs/regression-audit-2026-10-07.md`.** |
 | Product gallery (`gallery/*`) | **Keep** | Swipe, keys, zoom, accessible controls | Reused on PDP with the database image model |
 | Enquiry form + validation (`forms/EnquiryForm.tsx`, `lib/enquiry/schema.ts`) | **Keep / improve** | Honest states, spam traps | Product list now from the database; prefilled order requests |
 | Static product data (`data/products.ts`, `data/asset-manifest.ts`) | **Rebuild** | Hard-coded catalogue can't scale or be managed | PostgreSQL catalogue (products, images, taxonomy with evidence basis), admin-managed |
-| Shop page (editorial/grid toggle + quick view) | **Rebuild** | No filters, sort or search; quick view duplicated the PDP | Data-driven listing with filters, sort, search, category pages |
-| Product page (`product/ProductPage.tsx`) | **Rebuild** | No purchase path | Purchase panel, availability, cart, wishlist, accordions, related, recently viewed, mobile sticky bar |
-| Header / footer | **Rebuild** | No search, account, wishlist or cart; footer not a commerce footer | Mega menu from populated categories; Search/Account/Wishlist/Cart; full footer |
+| Shop page (editorial/grid toggle + quick view) | **Rebuild** | No filters, sort or search; quick view duplicated the PDP | Data-driven listing with filters, sort, search, category pages  **Reversed 2026-10-07 — restored; see `docs/regression-audit-2026-10-07.md`.** |
+| Product page (`product/ProductPage.tsx`) | **Rebuild** | No purchase path | Purchase panel, availability, cart, wishlist, accordions, related, recently viewed, mobile sticky bar  **Reversed 2026-10-07 — restored; see `docs/regression-audit-2026-10-07.md`.** |
+| Header / footer | **Rebuild** | No search, account, wishlist or cart; footer not a commerce footer | Mega menu from populated categories; Search/Account/Wishlist/Cart; full footer  **Reversed 2026-10-07 — restored; see `docs/regression-audit-2026-10-07.md`.** |
 | Enquiry store (file JSONL / Supabase REST) | **Replace** | File store not durable on serverless; two code paths | Single Postgres store (Drizzle), same API contract |
 | HTTP Basic admin (`proxy.ts`, `lib/server/admin-auth.ts`) | **Replace** | One shared credential, no identity, no audit | Staff accounts with roles, per-action authorisation, audit log |
-| 3D "in the round" ring (`home/GalleryRing.tsx`) | **Remove** | Spectacle over shopping; a 3-product ring adds friction | — |
-| Pinned collection slides (`collection/Collection.tsx`) | **Remove** | 300vh scroll-jacking before support content | — |
-| Lenis smooth scrolling | **Remove** | Interfered with drawers, sticky toolbars and native scroll | Native scrolling |
-| Campaign scroll study (home) | **Move** | Long pinned section on the shopping path | Lives on `/editorial` |
-| Quick view dialog (`detail/*`) | **Remove** | Brief: card click goes to the PDP | — |
+| 3D "in the round" ring (`home/GalleryRing.tsx`) | **Remove** | Spectacle over shopping; a 3-product ring adds friction | —  **Reversed 2026-10-07 — restored; see `docs/regression-audit-2026-10-07.md`.** |
+| Pinned collection slides (`collection/Collection.tsx`) | **Remove** | 300vh scroll-jacking before support content | —  **Reversed 2026-10-07 — restored; see `docs/regression-audit-2026-10-07.md`.** |
+| Lenis smooth scrolling | **Remove** | Interfered with drawers, sticky toolbars and native scroll | Native scrolling  **Reversed 2026-10-07 — restored; see `docs/regression-audit-2026-10-07.md`.** |
+| Campaign scroll study (home) | **Move** | Long pinned section on the shopping path | Lives on `/editorial`  **Reversed 2026-10-07 — restored; see `docs/regression-audit-2026-10-07.md`.** |
+| Quick view dialog (`detail/*`) | **Remove** | Brief: card click goes to the PDP | —  **Reversed 2026-10-07 — restored; see `docs/regression-audit-2026-10-07.md`.** |
 
 ## 2. Readiness classification
 

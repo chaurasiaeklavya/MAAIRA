@@ -8,6 +8,7 @@ import { useExperience } from '../ExperienceProvider';
 import { RevealText } from '../motion/RevealText';
 import { Stage } from '../showcase/Stage';
 import styles from './EditorialStudies.module.css';
+import { pieceNumber } from '@/lib/catalogue/present';
 import type { CatalogueImage as ResolvedImage, CatalogueProduct as Product } from '@/lib/catalogue/types';
 
 /**
@@ -38,12 +39,13 @@ function StudyText({ product, numeral, title, line }: { product: Product; numera
     <div className={styles.text}>
       <p className={styles.kicker}>
         Study {numeral}
+        {pieceNumber(product) ? ` · ${pieceNumber(product)}` : ''}
       </p>
       <RevealText as="h2" className={`${styles.title} display`}>
         {title}
       </RevealText>
       <p className={styles.line}>{line}</p>
-      <Link href={`/products/${product.slug}`} className={styles.link}>
+      <Link href={`/products/${product.slug}`} className={styles.link} transitionTypes={['nav-forward']}>
         View {product.name}
         <svg viewBox="0 0 32 12" width="28" height="12" aria-hidden="true">
           <path d="M0 6h30m0 0-5-5m5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1" />

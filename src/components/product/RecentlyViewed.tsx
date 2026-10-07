@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { readViewed } from '../commerce/WishlistProvider';
+import { RevealText } from '../motion/RevealText';
 import { ProductCard } from './ProductCard';
 import type { CatalogueProduct } from '@/lib/catalogue/types';
 import styles from './ProductPage.module.css';
@@ -23,17 +24,21 @@ export function RecentlyViewed({ excludeId }: { excludeId?: string }) {
   }, [excludeId]);
   if (!items.length) return null;
   return (
-    <section className={`container ${styles.more}`} aria-labelledby="recent-title">
-      <h2 id="recent-title" className={`${styles.sectionTitle} display`}>
-        Recently viewed
-      </h2>
-      <ul className={styles.moreGrid}>
-        {items.map((p) => (
-          <li key={p.id}>
-            <ProductCard product={p} />
-          </li>
-        ))}
-      </ul>
+    <section className={styles.more} aria-labelledby="recent-title">
+      <div className="container">
+        <header className={styles.sectionHead}>
+          <p className="eyebrow">On this device</p>
+          <RevealText as="h2" id="recent-title" className={`${styles.sectionTitle} display`}>
+            {'Recently *viewed*'}
+          </RevealText>
+        </header>
+        <div className={styles.moreGrid}>
+          {items.map((p, i) => (
+            // No shared-element name: the same piece may also appear above.
+            <ProductCard key={p.id} product={p} index={i} size="compact" sharedTransition={false} />
+          ))}
+        </div>
+      </div>
     </section>
   );
 }

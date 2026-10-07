@@ -50,7 +50,7 @@ export function GalleryPhoto({
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.45, ease: EASE }}
+            transition={{ duration: 0.7, ease: EASE }}
             drag={images.length > 1 && !gallery.canZoom ? 'x' : false}
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.18}

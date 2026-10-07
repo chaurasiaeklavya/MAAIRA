@@ -7,6 +7,19 @@
 
 Every supplied URL is recorded, de-duplicated and traceable. **The visual analysis itself — grouping photographs into physical bags, choosing primary images and assigning styles/occasions — could not be performed**, because `res.cloudinary.com` is denied by this build environment's network policy (HTTP 403 on CONNECT, re-checked repeatedly on 2026-10-07; the Google Drive folder's files are not listable either). No photograph was opened, so no grouping, category, colour or occasion has been inferred, and nothing has been invented to fill the gap. The catalogue system that consumes the grouping is fully built and tested; the grouping is a data step that can be completed in minutes by either route below.
 
+### Re-check — regression-correction pass (2026-10-07, later the same day)
+
+Grouping is **still BLOCKED**; nothing below was guessed. Every permitted source was tried again:
+
+| Source | Result |
+|---|---|
+| `res.cloudinary.com` (both clouds) | Refused by the environment proxy (`CONNECT tunnel failed, response 403`) |
+| Google Drive connector — "PRODUCT SHOOT(BAG)" folder (`1b9lzP8fyz_x5qTojSKfhndYNscpZgG28`, owner gishant17@gmail.com) | Folder metadata readable; **no child files listable** (`parentId` query returns nothing) |
+| Google Drive connector — filename / recent-image searches | No `IMG_86xx` / `IMG_87xx` or MAAIRA files; only unrelated personal images (not opened) |
+| Session uploads / local disk | No product image files present |
+
+Unblock with either: allow `res.cloudinary.com` in the cloud environment's network settings, share the Drive folder's files with the connected account (or upload the photographs to the session), or group them in **/admin/media**.
+
 ## 2. What is FACT, INFERENCE and UNKNOWN
 
 | Class | What we know |

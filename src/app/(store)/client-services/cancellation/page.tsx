@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Cancellation', robots: { index: fals
 export default function CancellationPage() {
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Client services" title="Cancellation" />
+      <PageHeader eyebrow="Client services" title="Cancelling an *order*" />
       <ServiceLayout current="/client-services/cancellation">
         <DraftNotice />
         <h2>Unpaid orders</h2>

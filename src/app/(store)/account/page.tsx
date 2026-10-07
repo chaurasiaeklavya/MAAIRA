@@ -19,7 +19,7 @@ export default async function AccountPage() {
   const orders = await listOrdersForUser(getDb(), user.id);
   return (
     <PageShell>
-      <PageHeader compact eyebrow="My account" title={`Hello, ${user.name.split(' ')[0]}`} />
+      <PageHeader eyebrow="My account" title={`Hello, *${user.name.split(' ')[0].replace(/\*/g, '')}*`} />
       <div className={`container ${styles.dash}`}>
         <section aria-labelledby="orders-title">
           <h2 id="orders-title" className={styles.h2}>

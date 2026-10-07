@@ -51,9 +51,9 @@ export function WishlistView() {
         </p>
       )}
       <ul className={styles.grid} data-cols={shown.length <= 3 ? 3 : 4} aria-busy={!products || undefined} style={{ marginTop: 24 }}>
-        {shown.map((p) => (
+        {shown.map((p, i) => (
           <li key={p.id}>
-            <ProductCard product={p} headingLevel="h2" />
+            <ProductCard product={p} index={i} size="compact" as="h2" />
           </li>
         ))}
       </ul>

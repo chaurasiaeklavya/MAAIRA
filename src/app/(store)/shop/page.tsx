@@ -18,8 +18,12 @@ export default async function ShopPage({ searchParams }: { searchParams: Promise
   const data = buildListing(products, terms, query);
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Shop" title="All bags" crumbs={[{ href: '/', label: 'Home' }, { href: '/shop', label: 'Shop' }]} />
-      <Listing data={data} query={query} basePath="/shop" hidden={query.q ? { q: query.q } : {}} />
+      <PageHeader
+        eyebrow="Shop"
+        title="The *pieces*"
+        lede="Every piece the house has published. Open one for each photographed view, save it, or enquire directly — a price shows as ₹XXXX until the house confirms it."
+      />
+      <Listing data={data} query={query} basePath="/shop" hidden={query.q ? { q: query.q } : {}} forthcoming={!data.facets.some((f) => f.options.some((o) => o.selected))} />
     </PageShell>
   );
 }

@@ -10,7 +10,7 @@ export default async function CartPage() {
   const { readiness } = await getReadiness().catch(() => ({ readiness: { ready: false, blockers: [] } }));
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Cart" title="Your cart" />
+      <PageHeader eyebrow="Cart" title="Your *cart*" />
       <CartPageView checkoutOpen={readiness.ready} />
     </PageShell>
   );

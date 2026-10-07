@@ -65,7 +65,7 @@ export function House({ teaser = false }: { teaser?: boolean }) {
           </p>
           <p>Explore the collection online, or ask the house about any piece — by message, by phone or with a call back.</p>
           {teaser && (
-            <Link href="/about" className={styles.more}>
+            <Link href="/about" className={styles.more} transitionTypes={['nav-forward']}>
               Discover the house
               <svg viewBox="0 0 32 12" width="28" height="12" aria-hidden="true">
                 <path d="M0 6h30m0 0-5-5m5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1" />

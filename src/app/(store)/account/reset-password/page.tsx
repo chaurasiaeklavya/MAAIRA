@@ -10,7 +10,7 @@ export default async function ResetPasswordPage({ searchParams }: { searchParams
   const { token, error } = await searchParams;
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Account" title="Choose a new password" />
+      <PageHeader eyebrow="Account" title="Choose a new *password*" />
       <div className={`container ${styles.narrow}`}>
         {token && !error ? <AuthForm mode="reset" token={token} /> : <p>This reset link is invalid or has expired. Please request a new one.</p>}
       </div>

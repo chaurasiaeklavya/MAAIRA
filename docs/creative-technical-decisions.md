@@ -106,7 +106,9 @@ The engine has a master gain, a cue bus with a procedural room reverb, an ambien
 - **Email:** optional Resend notification with HTML-escaped content.
 - **Admin:** HTTP Basic via `proxy.ts`, re-verified in handlers and server actions; disabled (404) unless credentials are set; `noindex` and `no-store`.
 
-## 8. E-commerce-first edition (2026-10-07)
+## 8. E-commerce-first edition (2026-10-07) — experience changes reversed in §9
+
+> **Superseded.** The removals and simplifications listed below degraded the approved experience and were reversed the same day (see §9 and `docs/regression-audit-2026-10-07.md`). They are kept here as a record.
 
 The brief now ranks commerce above effects ("E-COMMERCE ALWAYS WINS"). Decisions:
 
@@ -115,3 +117,13 @@ The brief now ranks commerce above effects ("E-COMMERCE ALWAYS WINS"). Decisions
 - **Removed from the shopping path:** the 3D gallery ring, pinned collection slides, Lenis smooth scrolling, quick view, and the scroll-pinned campaign study on home (moved to /editorial).
 - **Language:** plain words first ("Shop bags", "Add to cart", "Checkout", "Cart" rather than "Bag" — on a handbag store "bag" is ambiguous); icons support text, never replace it.
 - **Data-driven merchandising:** categories, filters, sorts, "New arrivals" and "Shop by" sections only appear when real data supports them, so the store grows into its taxonomy instead of advertising empty shelves.
+
+## 9. Regression correction (2026-10-07)
+
+E-commerce first means the store must work — it does not mean removing the creative experience. The approved experience (`b33aa3f`) is the baseline; commerce is layered on top in the same language.
+
+- **Restored:** Lenis smooth scrolling (dialogs scroll natively and pause it), the full cinematic hero sequence and copy, the centred editorial header with hide-on-scroll, the full-screen leather menu, directional page transitions, the tilting framed product card with clip reveal and shared-element morph, Quick view, Selected pieces, the campaign study, the Gallery Ring, the Collection slides, the editorial shop with its view toggle, and the full product page with "Every view".
+- **Typography:** every page title is a masked display reveal with an italic accent; the `compact` header mode is gone. Cormorant Garamond (display) and Jost (text) were never changed and remain the only typefaces.
+- **Commerce in the same voice:** cart, search, account and wishlist are quiet icons in the header; purchase actions use the approved primary / secondary / "or call" pattern; filters and sort sit in the shop toolbar beside the Editorial / Grid toggle.
+- **Language:** "Explore the pieces", "All pieces", "The House" (the approved voice); "Add to cart", "Checkout" and "Cart" stay plain where a transaction happens.
+

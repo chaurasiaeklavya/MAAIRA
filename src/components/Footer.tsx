@@ -7,14 +7,14 @@ import styles from './Footer.module.css';
 
 export function Footer({ nav }: { nav: NavData }) {
   const shop = [
-    { href: '/shop', label: 'Shop all bags' },
+    { href: '/shop', label: 'All pieces' },
     ...(nav.hasArrivals ? [{ href: '/new-arrivals', label: 'New arrivals' }] : []),
     ...[...nav.styles, ...nav.occasions].slice(0, 6).map((c) => ({ href: `/shop/${c.slug}`, label: c.label })),
   ];
   const cols = [
     { title: 'Shop', items: shop },
-    { title: 'Customer care', items: careNav },
-    { title: 'About', items: aboutNav },
+    { title: 'Client services', items: careNav },
+    { title: 'The House', items: aboutNav },
   ];
   return (
     <footer className={styles.footer}>
@@ -24,7 +24,7 @@ export function Footer({ nav }: { nav: NavData }) {
 
       <div className={`container ${styles.inner}`}>
         <div className={styles.lead}>
-          <Link href="/" className={styles.lockupLink} aria-label={`${brand.name} — home`}>
+          <Link href="/" className={styles.lockupLink} aria-label={`${brand.name} — home`} transitionTypes={['nav-back']}>
             <span className={`logo-mask logo-mask--lockup ${styles.lockup}`} aria-hidden="true" />
           </Link>
           <p className={styles.muted}>
@@ -54,7 +54,9 @@ export function Footer({ nav }: { nav: NavData }) {
               <ul className={styles.links}>
                 {c.items.map((item) => (
                   <li key={item.href}>
-                    <Link href={item.href}>{item.label}</Link>
+                    <Link href={item.href} transitionTypes={['nav-forward']}>
+                      {item.label}
+                    </Link>
                   </li>
                 ))}
               </ul>
@@ -69,7 +71,9 @@ export function Footer({ nav }: { nav: NavData }) {
           <ul className={styles.legalLinks}>
             {legalNav.map((item) => (
               <li key={item.href}>
-                <Link href={item.href}>{item.label}</Link>
+                <Link href={item.href} transitionTypes={['nav-forward']}>
+                      {item.label}
+                    </Link>
               </li>
             ))}
           </ul>

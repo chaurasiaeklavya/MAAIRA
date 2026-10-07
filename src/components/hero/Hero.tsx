@@ -4,13 +4,15 @@ import { motion, useScroll, useTransform } from 'motion/react';
 import Link from 'next/link';
 import { useRef } from 'react';
 import { useExperience } from '../ExperienceProvider';
+import { RevealText } from '../motion/RevealText';
 import { LeatherCanvas } from './LeatherCanvas';
 import styles from './Hero.module.css';
 import { brand } from '@/data/brand';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
-export function Hero() {
+/** `count` is the number of published pieces (from the catalogue), shown only when known. */
+export function Hero({ count = 0 }: { count?: number }) {
   const { theme, reducedMotion } = useExperience();
   const hostRef = useRef<HTMLElement>(null);
   const anchorRef = useRef<HTMLSpanElement>(null);
@@ -77,7 +79,7 @@ export function Hero() {
                     ? { opacity: 1, scaleX: 1, filter: 'none' }
                     : { opacity: 1, scaleX: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none' } }
                 }
-                transition={{ duration: 1.2, delay: 0.35, ease: EASE }}
+                transition={{ duration: 1.6, delay: 1.25, ease: EASE }}
                 aria-hidden="true"
               >
                 <span className={styles.wordmarkShadow}>
@@ -90,26 +92,45 @@ export function Hero() {
         </div>
 
         <motion.div className={styles.lower} style={reducedMotion ? undefined : { y: contentY, opacity: contentOpacity }}>
-          <motion.div className={styles.intro} {...rise(0.3)}>
+          <motion.div className={styles.intro} {...rise(1.7)}>
             <p className={styles.descriptor}>{brand.descriptor}</p>
+            {count > 0 && (
+              <Link href="/shop" className={styles.presenting} transitionTypes={['nav-forward']}>
+                <span className={styles.presentingDot} aria-hidden="true" />
+                Now presenting · {count} {count === 1 ? 'piece' : 'pieces'} from the house
+              </Link>
+            )}
           </motion.div>
 
           <div className={styles.pitch}>
-            <motion.p className={`${styles.tagline} display`} {...rise(0.4)}>
-              Luxury bags, <em>made to be carried.</em>
-            </motion.p>
-            <motion.div className={styles.ctas} {...rise(0.5)}>
-              <Link href="/shop" className="btn btn--primary">
-                Shop bags
+            <RevealText as="p" className={`${styles.tagline} display`} trigger="mount" delay={1.8}>
+              {'Quiet luxury, *reimagined.*'}
+            </RevealText>
+            <motion.div className={styles.ctas} {...rise(2.15)}>
+              <Link href="/shop" className={styles.cta} transitionTypes={['nav-forward']}>
+                <span>Explore the pieces</span>
+                <svg viewBox="0 0 32 12" width="28" height="12" aria-hidden="true">
+                  <path d="M0 6h30m0 0-5-5m5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1" />
+                </svg>
               </Link>
-              <Link href="/about" className={styles.ctaGhost}>
-                Our story
+              <Link href="/about" className={styles.ctaGhost} transitionTypes={['nav-forward']}>
+                The House
               </Link>
             </motion.div>
           </div>
         </motion.div>
       </div>
 
+      <motion.div
+        className={styles.scrollCue}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 2.4, duration: 1 }}
+        aria-hidden="true"
+      >
+        <span>Scroll</span>
+        <i />
+      </motion.div>
     </section>
   );
 }

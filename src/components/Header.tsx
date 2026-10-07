@@ -3,13 +3,14 @@
 import Form from 'next/form';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { useMotionValueEvent, useScroll } from 'motion/react';
 import { useEffect, useRef, useState } from 'react';
 import { useCart } from './commerce/CartProvider';
 import { useWishlist } from './commerce/WishlistProvider';
 import { useExperience } from './ExperienceProvider';
 import { SoundControl } from './sound/SoundControl';
 import { brand } from '@/data/brand';
-import { aboutNav, careNav } from '@/data/site';
+import { careNav, primaryNav } from '@/data/site';
 import styles from './Header.module.css';
 
 export interface NavData {
@@ -44,11 +45,13 @@ const Svg = ({ children }: { children: React.ReactNode }) => (
 );
 
 export function Header({ nav, signedIn }: { nav: NavData; signedIn: boolean }) {
-  const { theme, toggleTheme } = useExperience();
+  const { theme, toggleTheme, play } = useExperience();
   const { cart, open: openCart } = useCart();
   const { ids: wishlist } = useWishlist();
   const pathname = usePathname();
+  const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
+  const [hidden, setHidden] = useState(false);
   const [shopOpen, setShopOpen] = useState(false);
   const menuRef = useRef<HTMLDialogElement>(null);
   const searchRef = useRef<HTMLDialogElement>(null);
@@ -56,18 +59,23 @@ export function Header({ nav, signedIn }: { nav: NavData; signedIn: boolean }) {
   const cartCount = cart.lines.reduce((n, l) => n + l.quantity, 0);
   const hasMega = nav.styles.length + nav.occasions.length > 0 || nav.hasArrivals;
 
-  useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 24);
-    onScroll();
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  // Quietly steps aside while reading down the page; returns on the way up.
+  useMotionValueEvent(scrollY, 'change', (y) => {
+    const prev = scrollY.getPrevious() ?? 0;
+    setScrolled(y > 40);
+    setHidden(y > 480 && y > prev + 2 && !shopOpen);
+    if (y < prev - 2) setHidden(false);
+  });
+  // A reload mid-page starts with the scrolled treatment.
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync with the restored scroll position
+  useEffect(() => setScrolled(window.scrollY > 40), []);
 
   // Close menus on navigation (adjusting state during render).
   const [shownPath, setShownPath] = useState(pathname);
   if (shownPath !== pathname) {
     setShownPath(pathname);
     setShopOpen(false);
+    setHidden(false);
   }
   useEffect(() => {
     menuRef.current?.close();
@@ -86,6 +94,11 @@ export function Header({ nav, signedIn }: { nav: NavData; signedIn: boolean }) {
     };
   }, [shopOpen]);
 
+  const openMenu = () => {
+    menuRef.current?.showModal();
+    play('tick');
+  };
+
   const themeButton = (
     <button
       type="button"
@@ -95,7 +108,7 @@ export function Header({ nav, signedIn }: { nav: NavData; signedIn: boolean }) {
         toggleTheme({ x: r.left + r.width / 2, y: r.top + r.height / 2 });
       }}
       aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
-      title={theme === 'dark' ? 'Light theme' : 'Dark theme'}
+      title={theme === 'dark' ? 'Ivory theme' : 'Espresso theme'}
     >
       <span className={styles.themeGlyph} data-theme-glyph={theme} aria-hidden="true" />
     </button>
@@ -109,7 +122,7 @@ export function Header({ nav, signedIn }: { nav: NavData; signedIn: boolean }) {
           <ul>
             {nav.styles.map((c) => (
               <li key={c.slug}>
-                <Link href={`/shop/${c.slug}`} onClick={onClick}>
+                <Link href={`/shop/${c.slug}`} onClick={onClick} transitionTypes={['nav-forward']}>
                   {c.label}
                 </Link>
               </li>
@@ -123,7 +136,7 @@ export function Header({ nav, signedIn }: { nav: NavData; signedIn: boolean }) {
           <ul>
             {nav.occasions.map((c) => (
               <li key={c.slug}>
-                <Link href={`/shop/${c.slug}`} onClick={onClick}>
+                <Link href={`/shop/${c.slug}`} onClick={onClick} transitionTypes={['nav-forward']}>
                   {c.label}
                 </Link>
               </li>
@@ -136,108 +149,112 @@ export function Header({ nav, signedIn }: { nav: NavData; signedIn: boolean }) {
 
   return (
     <>
-      <header className={styles.header} data-scrolled={scrolled || undefined} data-home={pathname === '/' || undefined}>
+      <header
+        className={styles.header}
+        data-scrolled={scrolled || undefined}
+        data-hidden={hidden || undefined}
+        data-home={pathname === '/' || undefined}
+      >
         <div className={styles.inner}>
-          <button type="button" className={`${styles.iconButton} ${styles.menuButton}`} onClick={() => menuRef.current?.showModal()} aria-haspopup="dialog" aria-label="Menu">
-            <span className={styles.burger} aria-hidden="true">
-              <i />
-              <i />
-              <i />
-            </span>
-            <span className={styles.menuLabel} aria-hidden="true">
-              Menu
-            </span>
-          </button>
-
-          <Link href="/" className={styles.brand} aria-label={`${brand.name} — home`}>
+          <Link href="/" className={styles.brand} aria-label={`${brand.name} — home`} transitionTypes={['nav-back']}>
             <span className={`logo-mask logo-mask--monogram ${styles.monogram}`} aria-hidden="true" />
             <span className={`logo-mask logo-mask--wordmark ${styles.wordmark}`} aria-hidden="true" />
           </Link>
 
           <nav className={styles.nav} aria-label="Primary">
             <ul>
-              <li ref={shopRef} className={styles.shopItem}>
-                {hasMega ? (
-                  <>
-                    <button type="button" className={styles.navLink} aria-expanded={shopOpen} aria-controls="shop-panel" onClick={() => setShopOpen((o) => !o)} aria-current={isActive(pathname, '/shop') ? 'page' : undefined}>
-                      Shop
-                      <svg viewBox="0 0 10 6" width="9" height="6" aria-hidden="true">
-                        <path d="M0 0l5 6 5-6" fill="none" stroke="currentColor" />
-                      </svg>
+              {primaryNav.map((item) =>
+                item.href === '/shop' && hasMega ? (
+                  <li key={item.href} ref={shopRef} className={styles.shopItem}>
+                    <button
+                      type="button"
+                      className={styles.navLink}
+                      aria-expanded={shopOpen}
+                      aria-controls="shop-panel"
+                      onClick={() => setShopOpen((o) => !o)}
+                      aria-current={isActive(pathname, '/shop') ? 'page' : undefined}
+                    >
+                      {item.label}
                     </button>
                     <div id="shop-panel" className={styles.mega} hidden={!shopOpen}>
                       <div className={styles.megaCol}>
-                        <p className={styles.megaHead}>Shop</p>
+                        <p className={styles.megaHead}>The pieces</p>
                         <ul>
                           <li>
-                            <Link href="/shop">Shop all bags</Link>
+                            <Link href="/shop" transitionTypes={['nav-forward']}>
+                              All pieces
+                            </Link>
                           </li>
                           {nav.hasArrivals && (
                             <li>
-                              <Link href="/new-arrivals">New arrivals</Link>
+                              <Link href="/new-arrivals" transitionTypes={['nav-forward']}>
+                                New arrivals
+                              </Link>
                             </li>
                           )}
                         </ul>
                       </div>
                       {categoryLinks()}
                     </div>
-                  </>
+                  </li>
                 ) : (
-                  <Link href="/shop" className={styles.navLink} aria-current={isActive(pathname, '/shop') ? 'page' : undefined}>
-                    Shop
-                  </Link>
-                )}
-              </li>
-              {nav.hasArrivals && (
-                <li>
-                  <Link href="/new-arrivals" className={styles.navLink} aria-current={isActive(pathname, '/new-arrivals') ? 'page' : undefined}>
-                    New arrivals
-                  </Link>
-                </li>
+                  <li key={item.href}>
+                    <Link
+                      href={item.href}
+                      className={styles.navLink}
+                      aria-current={isActive(pathname, item.href) ? 'page' : undefined}
+                      transitionTypes={['nav-forward']}
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ),
               )}
-              <li>
-                <Link href="/about" className={styles.navLink} aria-current={isActive(pathname, '/about') ? 'page' : undefined}>
-                  About
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className={styles.navLink} aria-current={isActive(pathname, '/contact') ? 'page' : undefined}>
-                  Contact
-                </Link>
-              </li>
             </ul>
           </nav>
 
-          <div className={styles.utilities}>
-            <button type="button" className={styles.utility} onClick={() => searchRef.current?.showModal()} aria-haspopup="dialog">
+          <div className={styles.controls}>
+            <button type="button" className={styles.iconButton} onClick={() => searchRef.current?.showModal()} aria-haspopup="dialog">
               <Svg>{Icon.search}</Svg>
-              <span className={styles.utilityLabel}>Search</span>
+              <span className="visually-hidden">Search</span>
             </button>
-            <Link href={signedIn ? '/account' : '/account/sign-in'} className={`${styles.utility} ${styles.desktopOnly}`} aria-current={isActive(pathname, '/account') ? 'page' : undefined}>
+            <Link
+              href={signedIn ? '/account' : '/account/sign-in'}
+              className={`${styles.iconButton} ${styles.desktopOnly}`}
+              aria-current={isActive(pathname, '/account') ? 'page' : undefined}
+            >
               <Svg>{Icon.account}</Svg>
-              <span className={styles.utilityLabel}>{signedIn ? 'Account' : 'Sign in'}</span>
+              <span className="visually-hidden">{signedIn ? 'Account' : 'Sign in'}</span>
             </Link>
-            <Link href="/wishlist" className={`${styles.utility} ${styles.desktopOnly}`} aria-current={isActive(pathname, '/wishlist') ? 'page' : undefined}>
+            <Link href="/wishlist" className={`${styles.iconButton} ${styles.desktopOnly}`} aria-current={isActive(pathname, '/wishlist') ? 'page' : undefined}>
               <Svg>{Icon.heart}</Svg>
-              <span className={styles.utilityLabel}>Wishlist</span>
+              <span className="visually-hidden">Wishlist{wishlist.length > 0 ? `, ${wishlist.length} saved` : ''}</span>
               {wishlist.length > 0 && (
                 <span className={styles.badge} aria-hidden="true">
                   {wishlist.length}
                 </span>
               )}
-              {wishlist.length > 0 && <span className="visually-hidden">, {wishlist.length} saved</span>}
             </Link>
-            <button type="button" className={styles.utility} onClick={openCart} aria-haspopup="dialog">
+            <button type="button" className={styles.iconButton} onClick={openCart} aria-haspopup="dialog">
               <Svg>{Icon.cart}</Svg>
-              <span className={styles.utilityLabel}>Cart</span>
+              <span className="visually-hidden">Cart, {cartCount === 1 ? '1 item' : `${cartCount} items`}</span>
               {cartCount > 0 && (
                 <span className={styles.badge} aria-hidden="true">
                   {cartCount}
                 </span>
               )}
-              <span className="visually-hidden">, {cartCount === 1 ? '1 item' : `${cartCount} items`}</span>
             </button>
+            <span className={`${styles.divider} ${styles.desktopOnly}`} aria-hidden="true" />
+            <span className={styles.desktopOnly}>
+              <SoundControl />
+            </span>
             <span className={styles.desktopOnly}>{themeButton}</span>
+            <button type="button" className={styles.menuButton} onClick={openMenu} aria-haspopup="dialog" aria-label="Menu">
+              <span className={styles.burger} aria-hidden="true">
+                <i />
+                <i />
+              </span>
+            </button>
           </div>
         </div>
       </header>
@@ -253,15 +270,17 @@ export function Header({ nav, signedIn }: { nav: NavData; signedIn: boolean }) {
               Search bags
             </label>
             <Svg>{Icon.search}</Svg>
-            <input id="site-search" name="q" type="search" placeholder="Search bags — try “office”, “crossbody”, “party”" maxLength={80} autoComplete="off" enterKeyHint="search" autoFocus />
-            <button type="submit" className="btn btn--primary">
+            <input id="site-search" name="q" type="search" placeholder="Search the house — try “office”, “crossbody”, “party”" maxLength={80} autoComplete="off" enterKeyHint="search" autoFocus />
+            <button type="submit" className={styles.searchSubmit}>
               Search
             </button>
           </Form>
           <div className={styles.searchQuick}>
-            <Link href="/shop">Shop all bags</Link>
+            <Link href="/shop" transitionTypes={['nav-forward']}>
+              All pieces
+            </Link>
             {[...nav.styles, ...nav.occasions].slice(0, 6).map((c) => (
-              <Link key={c.slug} href={`/shop/${c.slug}`}>
+              <Link key={c.slug} href={`/shop/${c.slug}`} transitionTypes={['nav-forward']}>
                 {c.label}
               </Link>
             ))}
@@ -272,29 +291,51 @@ export function Header({ nav, signedIn }: { nav: NavData; signedIn: boolean }) {
         </div>
       </dialog>
 
-      {/* Mobile / small-screen menu */}
-      <dialog ref={menuRef} className={styles.menu} aria-labelledby="menu-title" onClick={(e) => e.target === menuRef.current && menuRef.current?.close()}>
+      {/* Full-screen menu: leather, numbered, revealed from the top */}
+      <dialog ref={menuRef} className={`${styles.menu} leather`} aria-labelledby="menu-title" data-lenis-prevent>
         <div className={styles.menuPanel}>
           <div className={styles.menuHead}>
-            <h2 id="menu-title" className={styles.menuTitle}>
+            <h2 id="menu-title" className="visually-hidden">
               Menu
             </h2>
-            <button type="button" className={styles.dialogClose} onClick={() => menuRef.current?.close()}>
-              Close<span className="visually-hidden"> menu</span>
+            <Link href="/" className={styles.brand} aria-label={`${brand.name} — home`} transitionTypes={['nav-back']}>
+              <span className={`logo-mask logo-mask--monogram ${styles.monogram}`} aria-hidden="true" />
+              <span className={`logo-mask logo-mask--wordmark ${styles.wordmark}`} aria-hidden="true" />
+            </Link>
+            <button type="button" className={styles.menuClose} onClick={() => menuRef.current?.close()}>
+              <span className="visually-hidden">Close menu</span>
+              <span className={styles.burger} data-open aria-hidden="true">
+                <i />
+                <i />
+              </span>
             </button>
           </div>
           <nav aria-label="Menu" className={styles.menuNav}>
-            <ul className={styles.menuPrimary}>
-              <li>
-                <Link href="/shop">Shop all bags</Link>
-              </li>
-              {nav.hasArrivals && (
-                <li>
-                  <Link href="/new-arrivals">New arrivals</Link>
+            <ul className={styles.menuList}>
+              {primaryNav.map((item, i) => (
+                <li key={item.href} className={styles.menuItem} style={{ '--i': i } as React.CSSProperties}>
+                  <Link href={item.href} className={styles.menuLink} aria-current={isActive(pathname, item.href) ? 'page' : undefined} transitionTypes={['nav-forward']}>
+                    <span className={styles.menuIndex}>0{i + 1}</span>
+                    {item.label}
+                  </Link>
                 </li>
-              )}
+              ))}
             </ul>
-            <div className={styles.menuCats}>{categoryLinks()}</div>
+            {hasMega && (
+              <div className={styles.menuCats}>
+                {nav.hasArrivals && (
+                  <div className={styles.megaCol}>
+                    <p className={styles.megaHead}>Just in</p>
+                    <ul>
+                      <li>
+                        <Link href="/new-arrivals">New arrivals</Link>
+                      </li>
+                    </ul>
+                  </div>
+                )}
+                {categoryLinks()}
+              </div>
+            )}
             <ul className={styles.menuSecondary}>
               <li>
                 <Link href={signedIn ? '/account' : '/account/sign-in'}>{signedIn ? 'My account' : 'Sign in / create account'}</Link>
@@ -302,11 +343,6 @@ export function Header({ nav, signedIn }: { nav: NavData; signedIn: boolean }) {
               <li>
                 <Link href="/wishlist">Wishlist{wishlist.length ? ` (${wishlist.length})` : ''}</Link>
               </li>
-              {aboutNav.map((n) => (
-                <li key={n.href}>
-                  <Link href={n.href}>{n.label}</Link>
-                </li>
-              ))}
               {careNav.slice(0, 3).map((n) => (
                 <li key={n.href}>
                   <Link href={n.href}>{n.label}</Link>
@@ -315,8 +351,11 @@ export function Header({ nav, signedIn }: { nav: NavData; signedIn: boolean }) {
             </ul>
           </nav>
           <div className={styles.menuFoot}>
-            <a href={brand.contact.phoneHref}>{brand.contact.phoneDisplay}</a>
             <a href={`mailto:${brand.contact.email}`}>{brand.contact.email}</a>
+            <a href={brand.contact.phoneHref}>{brand.contact.phoneDisplay}</a>
+            <a href={brand.contact.instagramUrl} target="_blank" rel="noopener noreferrer">
+              Instagram<span className="visually-hidden"> (opens in a new tab)</span>
+            </a>
             <div className={styles.menuToggles}>
               {themeButton}
               <SoundControl placement="up" />

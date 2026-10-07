@@ -9,7 +9,7 @@ export const metadata: Metadata = { title: 'Cookies', robots: { index: false, fo
 export default function CookiesPage() {
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Client services" title="Cookies & storage" />
+      <PageHeader eyebrow="Client services" title="Cookies &amp; *storage*" />
       <ServiceLayout current="/client-services/cookies">
         <DraftNotice>This describes what the website currently stores. It has not yet been reviewed as a formal cookie policy.</DraftNotice>
         <h2>Strictly necessary cookies</h2>

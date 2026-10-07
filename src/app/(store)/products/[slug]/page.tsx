@@ -29,7 +29,8 @@ export default async function ProductRoute({ params }: { params: Promise<{ slug:
   const { products } = await getCatalogue();
   const settings = await loadSettings(getDb());
   const related = relatedProducts(product, products);
-  const more = related.length ? [] : products.filter((p) => p.id !== product.id).sort(featuredOrder);
+  const sequence = [...products].sort(featuredOrder);
+  const more = related.length ? [] : sequence.filter((p) => p.id !== product.id);
   const img = primaryImage(product);
 
   // Structured data from verified fields only: no ratings, no invented offers.
@@ -66,6 +67,7 @@ export default async function ProductRoute({ params }: { params: Promise<{ slug:
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }} />
       <ProductPage
         product={product}
+        sequence={sequence}
         related={related}
         more={more}
         pieces={products.map((p) => ({ slug: p.slug, name: p.name }))}

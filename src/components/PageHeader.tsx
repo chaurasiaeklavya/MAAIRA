@@ -10,7 +10,6 @@ export function PageHeader({
   lede,
   crumbs,
   align = 'start',
-  compact = false,
   children,
 }: {
   eyebrow: string;
@@ -19,19 +18,17 @@ export function PageHeader({
   lede?: ReactNode;
   crumbs?: { href: string; label: string }[];
   align?: 'start' | 'center';
-  /** Commerce pages: smaller, no entrance animation, products sooner. */
-  compact?: boolean;
   children?: ReactNode;
 }) {
   return (
-    <header className={`container ${styles.header}`} data-align={align} data-compact={compact || undefined}>
+    <header className={`container ${styles.header}`} data-align={align}>
       {crumbs && (
         <nav aria-label="Breadcrumb" className={styles.crumbs}>
           <ol>
             {crumbs.map((c, i) => (
               <li key={c.href}>
                 {i < crumbs.length - 1 ? (
-                  <Link href={c.href}>
+                  <Link href={c.href} transitionTypes={['nav-back']}>
                     {c.label}
                   </Link>
                 ) : (
@@ -43,13 +40,9 @@ export function PageHeader({
         </nav>
       )}
       <p className="eyebrow">{eyebrow}</p>
-      {compact ? (
-        <h1 className={`${styles.title} display`}>{title.replace(/\*/g, '')}</h1>
-      ) : (
-        <RevealText as="h1" className={`${styles.title} display`} trigger="mount" delay={0.15}>
-          {title}
-        </RevealText>
-      )}
+      <RevealText as="h1" className={`${styles.title} display`} trigger="mount" delay={0.15}>
+        {title}
+      </RevealText>
       {lede && <div className={styles.lede}>{lede}</div>}
       {children}
     </header>

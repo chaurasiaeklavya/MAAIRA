@@ -18,7 +18,7 @@ export default async function NewArrivalsPage({ searchParams }: { searchParams: 
   const data = buildListing(arrivals, terms, { ...query, sort: query.sort === 'featured' ? 'newest' : query.sort });
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Shop" title="New arrivals" crumbs={[{ href: '/shop', label: 'Shop' }, { href: '/new-arrivals', label: 'New arrivals' }]} />
+      <PageHeader eyebrow="Shop" title="New *arrivals*" crumbs={[{ href: '/shop', label: 'Shop' }, { href: '/new-arrivals', label: 'New arrivals' }]} />
       <Listing data={data} query={query} basePath="/new-arrivals" />
     </PageShell>
   );

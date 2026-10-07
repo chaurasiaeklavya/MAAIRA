@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: 'Terms', robots: { index: false, foll
 export default function TermsPage() {
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Client services" title="Terms" />
+      <PageHeader eyebrow="Client services" title="Terms of *use*" />
       <ServiceLayout current="/client-services/terms">
         <DraftNotice />
         <h2>About this website</h2>

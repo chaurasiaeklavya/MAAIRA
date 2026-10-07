@@ -4,7 +4,7 @@ import { motion, type MotionValue, type MotionStyle } from 'motion/react';
 import { CloudImage } from '../CloudImage';
 import { SharedFrame } from '../PageShell';
 import styles from './ProductFrame.module.css';
-import type { ResolvedImage } from '@/data/products';
+import type { CatalogueImage as ResolvedImage } from '@/lib/catalogue/types';
 
 /**
  * A photograph in its passe-partout mat — the one way product imagery is

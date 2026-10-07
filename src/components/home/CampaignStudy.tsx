@@ -7,6 +7,7 @@ import { CloudImage } from '../CloudImage';
 import { useExperience } from '../ExperienceProvider';
 import styles from './CampaignStudy.module.css';
 import type { CatalogueImage as ResolvedImage, CatalogueProduct } from '@/lib/catalogue/types';
+import { pieceNumber } from '@/lib/catalogue/present';
 import { windowRange } from '@/lib/ranges';
 
 const CHAPTERS = ['Seen first in the light.', 'Then turned, and turned again.', 'Every view, ready for a closer look.'];
@@ -32,7 +33,7 @@ export function CampaignStudy({ product }: { product: CatalogueProduct }) {
     return (
       <section ref={ref} className={styles.staticSection} aria-labelledby="study-title">
         <div className="container">
-          <p className="eyebrow">A study in light</p>
+          <p className="eyebrow">{pieceNumber(product) ? `Study ${pieceNumber(product)}` : 'A study in light'}</p>
           <h2 id="study-title" className={`${styles.title} display`}>
             {product.name}, <em>in every view</em>
           </h2>
@@ -48,7 +49,7 @@ export function CampaignStudy({ product }: { product: CatalogueProduct }) {
               </figure>
             ))}
           </div>
-          <Link href={`/products/${product.slug}`} className={styles.link}>
+          <Link href={`/products/${product.slug}`} className={styles.link} transitionTypes={['nav-forward']}>
             View {product.name}
           </Link>
         </div>
@@ -63,7 +64,7 @@ export function CampaignStudy({ product }: { product: CatalogueProduct }) {
         <motion.div className={styles.light} style={{ background: light }} aria-hidden="true" />
         <div className={`container ${styles.layout}`}>
           <div className={styles.text}>
-            <p className="eyebrow">A study in light</p>
+            <p className="eyebrow">{pieceNumber(product) ? `Study ${pieceNumber(product)}` : 'A study in light'}</p>
             <h2 id="study-title" className={`${styles.title} display`}>
               {product.name}, <em>in every view</em>
             </h2>

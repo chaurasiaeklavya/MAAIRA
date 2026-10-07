@@ -2,7 +2,7 @@
   --light-x: 0.38;
   --light-y: 0.32;
   position: relative;
-  min-height: 86svh;
+  min-height: 100svh;
   display: grid;
   overflow: clip;
   isolation: isolate;
@@ -55,7 +55,7 @@
   position: relative;
   display: grid;
   grid-template-rows: 1fr auto;
-  min-height: 86svh;
+  min-height: 100svh;
   padding: calc(var(--header-h) + 3vh) var(--gutter) clamp(28px, 6vh, 64px);
   max-width: var(--maxw);
   width: 100%;

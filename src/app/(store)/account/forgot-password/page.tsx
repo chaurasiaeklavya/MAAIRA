@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: 'Reset your password', robots: { inde
 export default function ForgotPasswordPage() {
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Account" title="Reset your password" />
+      <PageHeader eyebrow="Account" title="Reset your *password*" />
       <div className={`container ${styles.narrow}`}>
         {emailConfigured() ? (
           <>

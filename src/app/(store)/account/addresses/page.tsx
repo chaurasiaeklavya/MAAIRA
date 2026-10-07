@@ -19,7 +19,7 @@ export default async function AddressesPage() {
   const rows = await getDb().select().from(s.addresses).where(eq(s.addresses.userId, user.id)).orderBy(desc(s.addresses.isDefault), desc(s.addresses.createdAt));
   return (
     <PageShell>
-      <PageHeader compact eyebrow="My account" title="Saved addresses" crumbs={[{ href: '/account', label: 'Account' }, { href: '/account/addresses', label: 'Addresses' }]} />
+      <PageHeader eyebrow="My account" title="Saved *addresses*" crumbs={[{ href: '/account', label: 'Account' }, { href: '/account/addresses', label: 'Addresses' }]} />
       <div className={`container ${styles.wrap}`}>
         <section aria-labelledby="saved-title">
           <h2 id="saved-title" className={styles.h2}>

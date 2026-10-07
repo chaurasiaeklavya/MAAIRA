@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: 'Shipping', robots: { index: false, f
 export default function ShippingPage() {
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Client services" title="Shipping" />
+      <PageHeader eyebrow="Client services" title="Shipping &amp; *delivery*" />
       <ServiceLayout current="/client-services/shipping">
         <DraftNotice />
         <h2>Where we deliver</h2>

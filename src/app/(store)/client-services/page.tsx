@@ -11,7 +11,7 @@ export const metadata: Metadata = { title: 'Client services' };
 export default function ClientServicesPage() {
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Client services" title="How can we help?" />
+      <PageHeader eyebrow="Client services" title="How can we *help?*" />
       <ServiceLayout current="/client-services">
         <h2>Questions</h2>
         <Faq

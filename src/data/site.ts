@@ -6,7 +6,8 @@ export interface NavItem {
 
 export const primaryNav: NavItem[] = [
   { href: '/shop', label: 'Shop' },
-  { href: '/about', label: 'About' },
+  { href: '/about', label: 'The House' },
+  { href: '/editorial', label: 'Editorial' },
   { href: '/contact', label: 'Contact' },
 ];
 
@@ -20,7 +21,7 @@ export const careNav: NavItem[] = [
 ];
 
 export const aboutNav: NavItem[] = [
-  { href: '/about', label: 'About MAAIRA' },
+  { href: '/about', label: 'The House' },
   { href: '/editorial', label: 'Editorial' },
 ];
 

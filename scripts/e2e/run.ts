@@ -214,12 +214,14 @@ async function shopperJourney(browser: Browser, label: string, viewport: { width
   const page = await ctx.newPage();
   await preparePage(page);
   const shot = (n: string) => page.screenshot({ path: `${OUT}/${label}-${n}.png` });
+  // Product cards in the listing (editorial or grid view).
+  const CARDS = 'main article[aria-labelledby^="card-"]';
 
-  // Discover: home → Shop bags
+  // Discover: home → Explore the pieces
   await page.goto(`${BASE}/`, { waitUntil: 'load' });
-  await page.getByRole('link', { name: 'Shop bags' }).click();
+  await page.getByRole('link', { name: 'Explore the pieces' }).first().click();
   await page.waitForURL('**/shop');
-  const count = await page.locator('main ul li article').count();
+  const count = await page.locator(CARDS).count();
   check(count === 4, `[${label}] shop lists all 4 published bags (found ${count})`);
 
   // Filter: Style → Totes (combinable filters via the sheet)
@@ -229,7 +231,7 @@ async function shopperJourney(browser: Browser, label: string, viewport: { width
   await page.getByRole('button', { name: 'Show results' }).click();
   await page.waitForURL(/style=totes/);
   await page.waitForTimeout(400);
-  const filtered = await page.locator('main ul li article h2').allTextContents();
+  const filtered = await page.locator(`${CARDS} h2`).allTextContents();
   check(filtered.length === 1 && filtered[0].includes('Arc Tote'), `[${label}] filters combine (Totes + Black → ${filtered.join(', ')})`);
   await shot('shop-filtered');
   await page.getByRole('link', { name: 'Clear all' }).click();
@@ -243,7 +245,7 @@ async function shopperJourney(browser: Browser, label: string, viewport: { width
 
   // Search by need, with a typo
   await page.goto(`${BASE}/search?q=ofice+bag`, { waitUntil: 'load' });
-  const found = await page.locator('main ul li article h2').allTextContents();
+  const found = await page.locator(`${CARDS} h2`).allTextContents();
   check(found.length === 1 && found[0].includes('Arc Tote'), `[${label}] search “ofice bag” (typo) finds the office tote`);
   await page.goto(`${BASE}/search?q=backpack`, { waitUntil: 'load' });
   check(await page.getByText(/don’t have backpacks/i).count(), `[${label}] no-result search explains and offers “Browse all bags”`);

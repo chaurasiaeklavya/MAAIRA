@@ -20,7 +20,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
 
   return (
     <PageShell>
-      <PageHeader compact eyebrow="Search" title={query.q ? `Results for “${query.q}”` : 'Search'}>
+      <PageHeader eyebrow="Search" title={query.q ? `Results for *“${query.q.replace(/\*/g, '')}”*` : 'Search the *house*'}>
         <Form action="/search" className={styles.form} role="search">
           <label htmlFor="search-page-input" className="visually-hidden">
             Search bags
