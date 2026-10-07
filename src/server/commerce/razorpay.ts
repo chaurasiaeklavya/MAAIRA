@@ -64,9 +64,21 @@ export interface PaymentProvider {
   fetchPayment(paymentId: string): Promise<ProviderPayment>;
 }
 
-const API = 'https://api.razorpay.com/v1';
+const LIVE_API = 'https://api.razorpay.com/v1';
+
+/**
+ * API base. The override exists only for the automated end-to-end suite
+ * (a local stand-in for Razorpay) and is honoured only with TEST keys and an
+ * explicit opt-in, so it can never redirect live payments.
+ */
+export function apiBase(config: RazorpayConfig, env: Record<string, string | undefined> = process.env) {
+  const override = env.RAZORPAY_API_BASE;
+  if (override && env.RAZORPAY_ALLOW_TEST_API === '1' && config.keyId.startsWith('rzp_test_') && /^http:\/\/127\.0\.0\.1:\d+\/v1$/.test(override)) return override;
+  return LIVE_API;
+}
 
 export function razorpayClient(config: RazorpayConfig, fetchImpl: typeof fetch = fetch): PaymentProvider {
+  const API = apiBase(config);
   const auth = `Basic ${Buffer.from(`${config.keyId}:${config.keySecret}`).toString('base64')}`;
   const call = async <T>(path: string, init?: RequestInit): Promise<T> => {
     const res = await fetchImpl(`${API}${path}`, {

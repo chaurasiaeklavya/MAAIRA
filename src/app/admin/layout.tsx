@@ -6,5 +6,5 @@ export const metadata: Metadata = {
 };
 
 export default function AdminRoot({ children }: { children: React.ReactNode }) {
-  return <div id="main">{children}</div>;
+  return children;
 }

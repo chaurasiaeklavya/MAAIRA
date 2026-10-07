@@ -6,7 +6,7 @@ import { useCart } from './CartProvider';
 import styles from './CartLines.module.css';
 
 /** Cart line items with quantity controls — shared by the drawer and the cart page. */
-export function CartLines({ compact = false, onNavigate }: { compact?: boolean; onNavigate?: () => void }) {
+export function CartLines({ compact = false, readOnly = false, onNavigate }: { compact?: boolean; readOnly?: boolean; onNavigate?: () => void }) {
   const { cart, update, remove, pending } = useCart();
   return (
     <ul className={`${styles.lines} ${compact ? styles.compact : ''}`}>
@@ -23,6 +23,9 @@ export function CartLines({ compact = false, onNavigate }: { compact?: boolean; 
               </Link>
               <p className={styles.unit}>{line.unitPrice}</p>
               {line.issue && <p className={styles.issue}>{line.issue}</p>}
+              {readOnly ? (
+                <p className={styles.unit}>Quantity: {line.quantity}</p>
+              ) : (
               <div className={styles.controls}>
                 <div className={styles.qty} role="group" aria-label={`Quantity for ${line.name}`}>
                   <button type="button" onClick={() => update(line.productId, line.quantity - 1)} disabled={busy} aria-label={line.quantity === 1 ? `Remove ${line.name}` : `Decrease quantity of ${line.name}`}>
@@ -42,6 +45,7 @@ export function CartLines({ compact = false, onNavigate }: { compact?: boolean; 
                   Remove<span className="visually-hidden"> {line.name}</span>
                 </button>
               </div>
+              )}
             </div>
             <p className={styles.total}>{line.lineTotal ?? '—'}</p>
           </li>

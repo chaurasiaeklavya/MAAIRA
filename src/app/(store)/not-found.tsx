@@ -1,9 +1,8 @@
 import Link from 'next/link';
-import styles from './status.module.css';
+import styles from '../status.module.css';
 
 export default function NotFound() {
   return (
-    <main id="main">
     <section className={`${styles.status} leather`} aria-labelledby="nf-title">
       <span className={`logo-mask logo-mask--monogram ${styles.mark}`} aria-hidden="true" />
       <p className="eyebrow">404</p>
@@ -20,6 +19,5 @@ export default function NotFound() {
         </Link>
       </div>
     </section>
-    </main>
   );
 }

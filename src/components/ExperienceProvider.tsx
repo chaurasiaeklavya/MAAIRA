@@ -37,6 +37,15 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
 
   // Sync with the pre-paint theme script and stored sound preference.
   useEffect(() => {
+    // If React re-created <html> (e.g. a not-found render), re-apply the theme.
+    const root = document.documentElement;
+    if (root.dataset.theme !== 'light' && root.dataset.theme !== 'dark') {
+      let stored: string | null = null;
+      try {
+        stored = localStorage.getItem(THEME_KEY);
+      } catch {}
+      root.dataset.theme = stored === 'light' || stored === 'dark' ? stored : window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    }
     // eslint-disable-next-line react-hooks/set-state-in-effect -- one-time sync with DOM state set before hydration
     setTheme(readTheme());
     hydrateSoundPreferences();

@@ -11,7 +11,7 @@ export default async function StaffSignIn() {
   const user = await currentUser();
   if (can(user, 'admin:view')) redirect('/admin');
   return (
-    <div className={styles.signin}>
+    <main id="main" className={styles.signin}>
       <span className={`logo-mask logo-mask--lockup ${styles.signinLogo}`} aria-hidden="true" />
       <h1 className={styles.h1}>Staff sign in</h1>
       {user ? (
@@ -22,6 +22,6 @@ export default async function StaffSignIn() {
       ) : (
         <AuthForm mode="sign-in" next="/admin" staff />
       )}
-    </div>
+    </main>
   );
 }

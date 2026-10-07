@@ -1,105 +1,64 @@
-# MAAIRA FASHION BAGS: digital flagship
+# MAAIRA FASHION BAGS — online store
 
-The luxury storefront for **MAAIRA FASHION BAGS**, a brand of **Maanya Enterprises**, *Manufacturer of Luxury Designer Handbags*.
+The e-commerce platform for **MAAIRA FASHION BAGS**, a brand of **Maanya Enterprises**, *Manufacturer of Luxury Designer Handbags*.
 
-A multi-page editorial site with a working enquiry and callback backend. Product pages, a shop, the house story, editorial studies and client services are built around three sample pieces. **Selling is enquiry-led**: there is no cart or online payment until the business approves a sales model and a payment provider.
+A full-stack Next.js store: catalogue with search and filters, product pages, cart, checkout with Razorpay, orders and inventory, customer accounts, wishlist, enquiries and callbacks, and a staff admin with roles and an audit log — all backed by PostgreSQL.
 
-> ⚠️ **Before presenting:** the product-image grouping is **provisional**. The build environment could not open the Cloudinary photos, so bags were grouped by filename sequence only. Review `src/data/products.ts` against the real photos (see `docs/access-asset-readiness.md`).
+> ⚠️ **Catalogue data is not final.** The 45 product photographs supplied on 2026-10-07 could not be opened from the build environment (Cloudinary is blocked by its network policy), so they are not yet grouped into products. Three *provisional* pieces from the first brief are shown meanwhile, without prices. See `docs/catalogue-image-analysis.md` — staff can complete the grouping today in **/admin/media**.
 
 ## Quick start
 
 ```bash
 npm install
-cp .env.example .env.local   # then fill in what you need (see "Enquiries" below)
-npm run dev                  # http://localhost:3000
-npm run build && npm start   # production
+cp .env.example .env.local        # fill in DATABASE_URL and BETTER_AUTH_SECRET at least
+npm run db:migrate                # create/upgrade tables
+npm run db:seed                   # media library, taxonomy, provisional catalogue (idempotent)
+STAFF_PASSWORD='…' npm run staff:create -- --email you@example.com --name "Your Name" --role admin
+npm run build && npm start        # http://localhost:3000  (staff: /admin)
 ```
 
-Requires Node 22.6+ (developed on Node 22). The unit tests use Node's built-in TypeScript stripping.
+Requires Node 22.6+ and PostgreSQL 14+.
 
 | Script | Purpose |
 |---|---|
-| `npm run dev` · `npm run build` · `npm start` | Develop · build · serve |
-| `npm run lint` · `npm run typecheck` | ESLint (Next core-web-vitals + TS) · TypeScript |
-| `npm test` | Unit tests: enquiry validation, phone normalisation, rate limiter |
-| `npm run qa:screens` | Playwright journeys across 5 viewport/theme combinations plus reduced motion (server must be running with `ENQUIRY_STORE=file`). Add `-- --mock-images` where Cloudinary is unreachable. |
-| `npm run qa:a11y` | axe-core WCAG A/AA audit of every route, quick view and sound panel, both themes. Add `-- --admin=user:pass` to include the admin. |
-| `npm run assets:brand` | Regenerate logo masks, icons, leather textures and the heat-stamp texture from the original logo |
+| `npm run dev` · `build` · `start` | Develop · build · serve |
+| `npm run lint` · `typecheck` | ESLint · TypeScript |
+| `npm test` | Unit + Postgres integration tests (needs `TEST_DATABASE_URL`) |
+| `npm run test:e2e` | End-to-end purchase journey, accounts, admin and security probes against a production build and the test database (`npm run build` first) |
+| `npm run qa:screens -- --mock-images` | Responsive/visual sweep 360 → 1920 px, both themes, reduced motion |
+| `npm run qa:a11y -- --staff=email:password` | axe-core WCAG 2.2 A/AA audit of storefront, dialogs and admin |
+| `npm run db:generate` · `db:migrate` · `db:seed` | Schema migrations and seed import |
+| `npm run staff:create` | Create or promote a staff/admin account |
+| `npm run assets:brand` | Regenerate logo masks, icons and leather textures |
 
-## Routes
+## How it works
 
-| Route | What it is |
-|---|---|
-| `/` | Hero (WebGL leather with a heat-stamped monogram), featured pieces, scroll study, house teaser, "in the round" 3D gallery, collection slides, enquiry band |
-| `/shop` | Editorial or grid view of the pieces, quick view (`?piece=no-02` deep links) |
-| `/shop/[slug]` | Product page: gallery (swipe, keys, zoom), every view, inline enquiry, more pieces, previous/next |
-| `/house` | Brand facts, credentials, identity study, pieces |
-| `/editorial` | Three campaign studies built from the authentic photos |
-| `/contact` | Enquiry and callback forms (`?mode=callback&piece=no-01` preselects) |
-| `/client-services` (+ `/shipping-returns`, `/privacy`, `/terms`) | FAQ and **draft** policy pages (clearly marked, `noindex`) |
-| `/admin/enquiries` | Protected enquiry review (HTTP Basic; disabled unless configured) |
-| `POST /api/enquiries` | Enquiry/callback endpoint |
+- **Catalogue** (`src/db/schema.ts`, `src/server/catalogue*.ts`): products, photographs (`media_assets`), styles/occasions (`taxonomy_terms`) with an evidence basis per assignment (fact · inference · client). Categories, filters and navigation appear only when real products carry them. Unknown attributes stay empty and are never displayed.
+- **Discovery** (`src/lib/catalogue/discovery.ts`): combinable filters (OR within a group, AND across groups), sort options that exist only when data supports them, search with synonyms ("office bag" → Office & Work) and typo tolerance, related products from shared attributes.
+- **Cart & checkout** (`src/server/commerce/*`): the browser holds only an httpOnly cart token; prices come from the database. Checkout creates the order in one transaction (row locks, stock reservation, idempotency key), then a Razorpay order for the server-computed amount. An order becomes **paid** only after the payment signature verifies *and* the payment fetched from Razorpay matches the order, amount and currency — or a signed, de-duplicated webhook confirms it. Unpaid orders expire after 30 minutes and release stock.
+- **Checkout readiness**: checkout opens only when payment keys, delivery charge, tax treatment (prices inclusive of GST), approved policies and the staff "open checkout" switch are all set (`/admin/settings`). Until then customers see an honest "not open yet" page that sends their cart as an order request.
+- **Accounts** (Better Auth): email + password (scrypt), database sessions, rate-limited sign-in/up/reset; roles `customer` · `staff` · `admin` (never settable at sign-up).
+- **Admin** (`/admin`): products and photographs (group photos into products), inventory adjustments with history, orders with a state machine, enquiries, store settings (admin), audit log (admin). Every page and server action re-checks the role; customers get a 404.
 
-## Enquiries & callbacks (backend)
+Architecture, data model and deployment: `docs/architecture.md`.
 
-`POST /api/enquiries` validates on the server with the same rules the form uses in the browser (`src/lib/enquiry/schema.ts`). It rejects cross-site posts, wrong content types and oversized bodies. It rate-limits each IP (5 per 10 minutes by default) and catches bots with a honeypot field and a timing trap. Retries with the same idempotency key return the original reference. The form shows success **only** when the server returns a reference.
+## Deployment (summary)
 
-Choose where requests go in `.env.local` (see `.env.example`):
+1. Provision PostgreSQL (e.g. Supabase or Neon; use the pooled URL on serverless) and run `npm run db:migrate` and `npm run db:seed`.
+2. Set the variables in `.env.example` on the host (Vercel or any Node host). Use **test** Razorpay keys first.
+3. Configure the Razorpay webhook to `https://<domain>/api/webhooks/razorpay` (events `payment.captured`, `payment.failed`, `order.paid`).
+4. Schedule `GET /api/cron/expire-orders` every 10–15 minutes with `Authorization: Bearer $CRON_SECRET`.
+5. Create the first admin with `npm run staff:create`, review `/admin/settings`, then complete the catalogue in `/admin/media`.
 
-1. **Supabase (recommended for hosted deployments):** apply `supabase/migrations/0001_enquiries.sql` (RLS on, no public access), then set `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`.
-2. **File:** `ENQUIRY_STORE=file` writes JSON lines to `.data/enquiries.jsonl` (permissions 600). It works on a single long-running Node server; **don't use it on serverless hosts**, where the disk isn't durable.
-3. **Email notification (optional, in addition or alone):** `RESEND_API_KEY`, `ENQUIRY_NOTIFY_TO` and `ENQUIRY_NOTIFY_FROM`.
-
-With none configured, the endpoint answers `503 not_configured`. The form then says plainly that online requests aren't connected, and offers a pre-filled email and the phone number, so nothing the visitor typed is lost.
-
-**Admin:** set `ADMIN_USER` and `ADMIN_PASSWORD` (12+ characters) to enable `/admin/enquiries`. It lists requests with filters and per-row status updates (new, contacted, closed). Access is gated by `src/proxy.ts` and re-checked in every handler and server action. Without credentials the route returns 404.
-
-## Sound
-
-Sound is off by default and controlled from the header (sound on/off, optional ambience, volume). The engine is `src/lib/sound/engine.ts`. **No licensed audio has been supplied**, so the in-browser procedural fallbacks are used. To use real recordings, add files to `public/audio/` and flip `supplied: true` in `src/lib/sound/manifest.ts`; slots and formats are listed there. Unsupplied files are never requested.
-
-## Updating products
-
-`src/data/products.ts` holds each piece's name, tagline, description, price, colour, stage and images. Images reference `src/data/asset-manifest.ts`. Set a real price with `price: { amount: 24500, display: '₹24,500', status: 'client-approved' }`, and the "to be confirmed" note disappears. A `colour` value appears only once set. New pieces get a product page, shop card, ring plates and form option automatically.
-
-## Project structure
-
-```
-src/
-  app/                    routes (pages, API, admin), layout, tokens, 404/error
-  components/
-    hero/                 WebGL leather + heat-stamped monogram
-    home/                 featured pieces, campaign study, 3D ring, enquiry band
-    product/              card, frame, product page
-    shop/ editorial/ house/ contact/ services/
-    detail/ gallery/      quick-view dialog, shared gallery
-    forms/                enquiry & callback form
-    sound/ motion/        sound control; reveal text, tilt
-  data/                   brand facts, products, asset manifest, site map
-  lib/                    enquiry schema, sound engine, server (store, notify, auth, rate limit)
-  proxy.ts                admin gate
-supabase/migrations/      enquiries table
-tests/                    unit tests
-scripts/                  brand assets, QA
-docs/                     audit, readiness, data gaps, decisions, traceability, master brief
-```
-
-## Behaviour notes
-
-- **Themes:** Espresso (dark) and Ivory (light), applied before first paint and persisted.
-- **Transitions:** route changes use the View Transitions API (product images morph from card to product page; the header stays anchored). Reduced motion disables them along with smooth scrolling, parallax, WebGL animation, particles, the 3D ring's drift and the custom cursor.
-- **Images:** Cloudinary `f_auto,q_auto:good` with a responsive `srcset`. If that fails, the original URL is tried, then a brand panel is shown.
-- **Security:** CSP and security headers (`next.config.ts`), server-only secrets, validated input, rate limiting, and a noindex admin.
-
-## Deployment
-
-Not deployed from this environment (no hosting credentials). For Vercel, set the environment variables above and use **Supabase** (not the file store) for enquiries. Any Node host works with `npm run build && npm start`.
+Nothing has been deployed from this environment (no hosting, DNS or provider credentials).
 
 ## Documentation
 
-- `docs/audit-2026-10.md`: design, motion, sound and backend audit (the starting point for this edition)
-- `docs/access-asset-readiness.md`: what could and couldn't be accessed
-- `docs/product-data-gaps.md`: missing product data and client questions
-- `docs/creative-technical-decisions.md`: concept, design system, motion, 3D, sound and stack rationale
-- `docs/requirements-traceability.md`: master-brief requirement status with evidence
-- `docs/MAAIRA_MASTER_PROMPT.md`: the master brief (source of truth)
+- `docs/ecommerce-audit-2026-10-07.md` — keep/improve/rebuild/remove audit and readiness classification
+- `docs/catalogue-image-analysis.md` — image intake, inventory, blocker and grouping workflow
+- `docs/architecture.md` — architecture, data model, security controls, operations
+- `docs/requirements-traceability.md` — requirement status with test evidence
+- `docs/product-data-gaps.md` — missing product data and client questions
+- `docs/access-asset-readiness.md` — what could and couldn't be accessed
+- `docs/creative-technical-decisions.md` — design system and creative rationale
+- `docs/MAAIRA_MASTER_PROMPT_COMPLETE.md` — the governing specification

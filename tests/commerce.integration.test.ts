@@ -10,10 +10,11 @@ import {
   createOrder,
   expireUnpaidOrders,
   findOrderForCustomer,
+  listOrdersForUser,
   OrderError,
   transitionOrder,
 } from '../src/server/commerce/orders-repo';
-import { verifyPaymentSignature, verifyWebhookSignature } from '../src/server/commerce/razorpay';
+import { apiBase, verifyPaymentSignature, verifyWebhookSignature } from '../src/server/commerce/razorpay';
 import { checkoutReadiness, DEFAULT_SETTINGS, type CommerceSettings } from '../src/server/commerce/settings';
 import { hit } from '../src/server/rate-limit-db';
 import { openTestDb, resetData, testDatabaseUrl, testProduct } from './helpers/db';
@@ -192,6 +193,10 @@ describe('commerce (Postgres integration)', { skip: !testDatabaseUrl() && 'TEST_
     assert.equal(await findOrderForCustomer(db, order.number, { userId: 'u2' }), null);
     assert.equal(await findOrderForCustomer(db, order.number, {}), null);
     assert.equal(await findOrderForCustomer(db, order.number, { token: 'guess' }), null);
+    const mine = await listOrdersForUser(db, 'u1');
+    assert.equal(mine.length, 1);
+    assert.equal(mine[0].itemCount, 1, 'item count comes from this order’s own lines');
+    assert.deepEqual(await listOrdersForUser(db, 'u2'), []);
   });
 
   test('database rate limiter counts across calls and resets after the window', async () => {
@@ -216,4 +221,14 @@ test('Razorpay signatures: valid passes, tampered fails (constant-time compare)'
   assert.equal(verifyWebhookSignature(body, wsig, 'whsec'), true);
   assert.equal(verifyWebhookSignature(body + ' ', wsig, 'whsec'), false);
   assert.equal(verifyWebhookSignature(body, null, 'whsec'), false);
+});
+
+test('Razorpay API override is ignored for live keys or without explicit opt-in', () => {
+  const live = { keyId: 'rzp_live_abc', keySecret: 'x', webhookSecret: null };
+  const test_ = { keyId: 'rzp_test_abc', keySecret: 'x', webhookSecret: null };
+  const env = { RAZORPAY_API_BASE: 'http://127.0.0.1:3199/v1', RAZORPAY_ALLOW_TEST_API: '1' };
+  assert.equal(apiBase(live, env), 'https://api.razorpay.com/v1');
+  assert.equal(apiBase(test_, { RAZORPAY_API_BASE: env.RAZORPAY_API_BASE }), 'https://api.razorpay.com/v1');
+  assert.equal(apiBase(test_, { ...env, RAZORPAY_API_BASE: 'https://evil.example/v1' }), 'https://api.razorpay.com/v1');
+  assert.equal(apiBase(test_, env), 'http://127.0.0.1:3199/v1');
 });

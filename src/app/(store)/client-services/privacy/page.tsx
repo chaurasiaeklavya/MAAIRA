@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { PageHeader } from '@/components/PageHeader';
 import { PageShell } from '@/components/PageShell';
@@ -45,7 +46,7 @@ export default function PrivacyPage() {
         <p>Order and account emails are sent through a transactional email provider when configured. We do not send marketing emails.</p>
         <h2>Cookies and storage</h2>
         <p>
-          See <a href="/client-services/cookies">Cookies &amp; storage</a> for everything the site stores in your browser.
+          See <Link href="/client-services/cookies">Cookies &amp; storage</Link> for everything the site stores in your browser.
         </p>
         <h2>Analytics and advertising</h2>
         <p>The website uses no analytics, advertising or tracking scripts.</p>

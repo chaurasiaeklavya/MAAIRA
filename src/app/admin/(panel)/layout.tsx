@@ -38,7 +38,9 @@ export default async function PanelLayout({ children }: { children: React.ReactN
           <SignOutButton to="/admin/sign-in" />
         </div>
       </aside>
-      <main className={styles.main}>{children}</main>
+      <main id="main" className={styles.main}>
+        {children}
+      </main>
     </div>
   );
 }

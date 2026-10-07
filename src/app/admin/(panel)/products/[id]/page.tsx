@@ -33,7 +33,7 @@ export default async function EditProduct({ params }: { params: Promise<{ id: st
     db
       .select()
       .from(s.mediaAssets)
-      .where(sql`not exists (select 1 from product_images pi where pi.asset_id = ${s.mediaAssets.id}) and ${s.mediaAssets.reviewStatus} <> 'rejected'`)
+      .where(sql`not exists (select 1 from product_images pi where pi.asset_id = media_assets.id) and media_assets.review_status <> 'rejected'`)
       .orderBy(asc(s.mediaAssets.id)),
     db.select().from(s.inventoryMovements).where(eq(s.inventoryMovements.productId, id)).orderBy(desc(s.inventoryMovements.createdAt)).limit(10),
   ]);

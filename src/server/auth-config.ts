@@ -29,7 +29,7 @@ export function createAuth(db: Database, env: Record<string, string | undefined>
     appName: 'MAAIRA FASHION BAGS',
     secret,
     baseURL: env.BETTER_AUTH_URL || siteUrl(env),
-    trustedOrigins: [siteUrl(env)],
+    trustedOrigins: [...new Set([siteUrl(env), env.BETTER_AUTH_URL].filter((o): o is string => Boolean(o)).map((o) => o.replace(/\/$/, '')))],
     database: drizzleAdapter(db, {
       provider: 'pg',
       schema: { user: schema.user, session: schema.session, account: schema.account, verification: schema.verification, rateLimit: schema.rateLimit },

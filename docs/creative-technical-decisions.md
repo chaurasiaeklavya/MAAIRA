@@ -105,3 +105,13 @@ The engine has a master gain, a cue bus with a procedural room reverb, an ambien
 - **Storage adapters:** Supabase (PostgREST over fetch, RLS-locked table, migration included), a JSON-lines file (single server), or neither (honest 503).
 - **Email:** optional Resend notification with HTML-escaped content.
 - **Admin:** HTTP Basic via `proxy.ts`, re-verified in handlers and server actions; disabled (404) unless credentials are set; `noindex` and `no-store`.
+
+## 8. E-commerce-first edition (2026-10-07)
+
+The brief now ranks commerce above effects ("E-COMMERCE ALWAYS WINS"). Decisions:
+
+- **Kept:** the heat-stamped leather hero (brand recognition at a glance), both art-directed themes, the gallery, sound (off by default, now in the footer and menu), the custom cursor (fine pointers only).
+- **Changed:** hero copy and CTA appear within 0.5 s; commerce pages use a compact header (no word-reveal animation) so products are reached immediately; product photos are shown at their own aspect ratio inside a thin mat, never cropped; route transitions are short fades.
+- **Removed from the shopping path:** the 3D gallery ring, pinned collection slides, Lenis smooth scrolling, quick view, and the scroll-pinned campaign study on home (moved to /editorial).
+- **Language:** plain words first ("Shop bags", "Add to cart", "Checkout", "Cart" rather than "Bag" — on a handbag store "bag" is ambiguous); icons support text, never replace it.
+- **Data-driven merchandising:** categories, filters, sorts, "New arrivals" and "Shop by" sections only appear when real data supports them, so the store grows into its taxonomy instead of advertising empty shelves.

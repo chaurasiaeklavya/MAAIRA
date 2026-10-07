@@ -313,7 +313,7 @@ export async function listOrdersForUser(db: Database, userId: string) {
       status: s.orders.status,
       totalPaise: s.orders.totalPaise,
       placedAt: s.orders.placedAt,
-      itemCount: sql<number>`(select coalesce(sum(quantity), 0)::int from order_items oi where oi.order_id = ${s.orders.id})`,
+      itemCount: sql<number>`(select coalesce(sum(oi.quantity), 0)::int from order_items oi where oi.order_id = orders.id)`,
     })
     .from(s.orders)
     .where(eq(s.orders.userId, userId))

@@ -26,6 +26,15 @@
 | Audio assets | **None supplied** anywhere in the project |
 | Email provider credentials | **None supplied** |
 
+### Re-check 2026-10-07 (catalogue intake)
+
+| Source | Result |
+|---|---|
+| 48 Cloudinary URLs, cloud `nzubasgf` | **Blocked**: proxy `connect_rejected` (organisation network policy) on every attempt, incl. re-checks during the session. Recorded verbatim in `catalogue/intake/`; 45 unique. |
+| Google Drive "PRODUCT SHOOT(BAG)" folder | Metadata visible (owner gishant17@gmail.com, created 2026-07-27); **children still not listable** via the connector. Searches of the connected Drive found only unrelated personal images, which were not opened. |
+| PostgreSQL | Available locally (PostgreSQL 16) for development and tests; no production database provisioned. |
+| Razorpay, Resend, hosting/DNS | No credentials supplied. |
+
 ## 2. Assets available in the project
 
 | Asset | Path | Status |

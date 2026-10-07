@@ -138,13 +138,15 @@ export function Header({ nav, signedIn }: { nav: NavData; signedIn: boolean }) {
     <>
       <header className={styles.header} data-scrolled={scrolled || undefined} data-home={pathname === '/' || undefined}>
         <div className={styles.inner}>
-          <button type="button" className={`${styles.iconButton} ${styles.menuButton}`} onClick={() => menuRef.current?.showModal()} aria-haspopup="dialog">
+          <button type="button" className={`${styles.iconButton} ${styles.menuButton}`} onClick={() => menuRef.current?.showModal()} aria-haspopup="dialog" aria-label="Menu">
             <span className={styles.burger} aria-hidden="true">
               <i />
               <i />
               <i />
             </span>
-            <span className={styles.menuLabel}>Menu</span>
+            <span className={styles.menuLabel} aria-hidden="true">
+              Menu
+            </span>
           </button>
 
           <Link href="/" className={styles.brand} aria-label={`${brand.name} — home`}>

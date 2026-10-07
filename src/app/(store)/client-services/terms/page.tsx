@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import type { Metadata } from 'next';
 import { PageHeader } from '@/components/PageHeader';
 import { PageShell } from '@/components/PageShell';
@@ -25,8 +26,8 @@ export default function TermsPage() {
         <Pending>contract formation, pricing errors, and tax treatment (whether prices include GST)</Pending>
         <h2>Delivery, returns and cancellation</h2>
         <p>
-          See <a href="/client-services/shipping">Shipping</a>, <a href="/client-services/returns">Returns &amp; refunds</a> and{' '}
-          <a href="/client-services/cancellation">Cancellation</a>.
+          See <Link href="/client-services/shipping">Shipping</Link>, <Link href="/client-services/returns">Returns &amp; refunds</Link> and{' '}
+          <Link href="/client-services/cancellation">Cancellation</Link>.
         </p>
         <h2>Intellectual property</h2>
         <Pending>ownership of the brand, logo, photographs and content</Pending>

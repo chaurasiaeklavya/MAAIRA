@@ -4,6 +4,7 @@ import { notFound } from 'next/navigation';
 import { getDb } from '@/db';
 import { PageHeader } from '@/components/PageHeader';
 import { PageShell } from '@/components/PageShell';
+import { CartSync } from '@/components/commerce/CartSync';
 import { OrderAutoRefresh } from '@/components/commerce/OrderAutoRefresh';
 import { formatPaise } from '@/lib/commerce/money';
 import { STATUS_LABELS, type OrderStatus } from '@/lib/commerce/order-state';
@@ -39,6 +40,7 @@ export default async function OrderPage({ params, searchParams }: { params: Prom
     <PageShell>
       <PageHeader compact eyebrow={`Order ${order.number}`} title={STATUS_LABELS[status]} lede={MESSAGES[status]} />
       {status === 'pending_payment' && <OrderAutoRefresh />}
+      <CartSync token={status} />
       <div className={`container ${styles.layout}`}>
         <section aria-labelledby="items-title">
           <h2 id="items-title" className={styles.h2}>

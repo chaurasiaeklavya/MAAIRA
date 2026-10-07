@@ -25,8 +25,8 @@ export default async function ProductsAdmin({ searchParams }: { searchParams: Pr
       availability: s.products.availability,
       stock: s.products.stock,
       trackInventory: s.products.trackInventory,
-      images: sql<number>`(select count(*)::int from product_images pi where pi.product_id = ${s.products.id})`,
-      terms: sql<string>`(select string_agg(t.label || ' (' || pt.basis || ')', ', ') from product_terms pt join taxonomy_terms t on t.id = pt.term_id where pt.product_id = ${s.products.id})`,
+      images: sql<number>`(select count(*)::int from product_images pi where pi.product_id = products.id)`,
+      terms: sql<string>`(select string_agg(t.label || ' (' || pt.basis || ')', ', ') from product_terms pt join taxonomy_terms t on t.id = pt.term_id where pt.product_id = products.id)`,
       notes: s.products.internalNotes,
     })
     .from(s.products)

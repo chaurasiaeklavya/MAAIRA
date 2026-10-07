@@ -191,7 +191,25 @@ export function CheckoutForm({
   );
 
   return (
-    <form ref={formRef} className={`container ${styles.layout}`} onSubmit={onSubmit} noValidate aria-describedby={status.message ? id('status') : undefined}>
+    <form
+      ref={formRef}
+      className={`container ${styles.layout}`}
+      onSubmit={onSubmit}
+      onChange={(e) => {
+        // Clear a field's error as soon as the customer edits it.
+        const name = (e.target as unknown as HTMLInputElement).name;
+        const key = name === 'email' || name === 'acceptTerms' ? name : `address.${name}`;
+        if (errors[key]) {
+          setErrors((prev) => {
+            const next = { ...prev };
+            delete next[key];
+            return next;
+          });
+        }
+      }}
+      noValidate
+      aria-describedby={status.message ? id('status') : undefined}
+    >
       <div className={styles.steps}>
         <fieldset className={styles.section} disabled={Boolean(started?.ok)}>
           <legend>1 · Contact</legend>
@@ -256,7 +274,10 @@ export function CheckoutForm({
         <h2 id={id('summary')} className={styles.summaryTitle}>
           3 · Order summary
         </h2>
-        <CartLines compact />
+        <CartLines compact readOnly />
+        <Link href="/cart" className="text-link">
+          Edit cart
+        </Link>
         <p className={styles.row}>
           <span>Subtotal</span>
           <span>{cart.subtotal}</span>
@@ -273,12 +294,22 @@ export function CheckoutForm({
 
         <h2 className={styles.summaryTitle}>4 · Payment</h2>
         <label className={styles.check}>
-          <input type="checkbox" name="acceptTerms" {...invalid('acceptTerms')} disabled={Boolean(started?.ok)} /> I accept the{' '}
-          <Link href="/client-services/terms" className="text-link" target="_blank">
-            terms
-          </Link>
-          , <Link href="/client-services/returns" className="text-link" target="_blank">returns</Link> and{' '}
-          <Link href="/client-services/privacy" className="text-link" target="_blank">privacy</Link> policies.
+          <input type="checkbox" name="acceptTerms" {...invalid('acceptTerms')} disabled={Boolean(started?.ok)} />
+          <span>
+            I accept the{' '}
+            <Link href="/client-services/terms" className="text-link" target="_blank">
+              terms
+            </Link>
+            ,{' '}
+            <Link href="/client-services/returns" className="text-link" target="_blank">
+              returns
+            </Link>{' '}
+            and{' '}
+            <Link href="/client-services/privacy" className="text-link" target="_blank">
+              privacy
+            </Link>{' '}
+            policies.
+          </span>
         </label>
         {errors.acceptTerms && (
           <p id={id('acceptTerms-err')} className={styles.err}>

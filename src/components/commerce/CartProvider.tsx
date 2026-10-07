@@ -13,6 +13,8 @@ interface CartContextValue {
   add: (productId: string, quantity?: number) => Promise<boolean>;
   update: (productId: string, quantity: number) => Promise<boolean>;
   remove: (productId: string) => Promise<boolean>;
+  /** Re-reads the cart from the server (e.g. after payment empties it). */
+  refresh: () => Promise<void>;
   pending: string | null;
   error: string | null;
   /** Short status for the polite live region ("Added to cart"). */
@@ -87,6 +89,15 @@ export function CartProvider({ initial, children }: { initial: CartView; childre
       },
       update: (productId, quantity) => send('PATCH', { productId, quantity }, quantity === 0 ? 'Removed from cart' : 'Quantity updated'),
       remove: (productId) => send('DELETE', { productId }, 'Removed from cart'),
+      refresh: async () => {
+        try {
+          const res = await fetch('/api/cart', { cache: 'no-store' });
+          const data = (await res.json()) as { cart?: CartView };
+          if (data.cart) setCart(data.cart);
+        } catch {
+          /* keep the current view */
+        }
+      },
       pending,
       error,
       announcement,
