@@ -74,3 +74,25 @@
     grid-column: 1 / -1;
   }
 }
+
+.header[data-compact] {
+  padding-top: calc(var(--header-h) + clamp(20px, 4vh, 48px));
+  padding-bottom: clamp(20px, 3vh, 32px);
+  row-gap: 12px;
+}
+
+.header[data-compact] > .title {
+  grid-column: 1 / -1;
+  font-size: var(--step-4);
+}
+
+.header[data-compact] > .lede {
+  grid-column: 1 / span 8;
+  padding-bottom: 0;
+}
+
+@media (max-width: 900px) {
+  .header[data-compact] > .lede {
+    grid-column: 1 / -1;
+  }
+}

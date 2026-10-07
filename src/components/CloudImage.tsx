@@ -1,12 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { ManifestAsset } from '@/data/asset-manifest';
+import type { ImageAsset } from '@/lib/catalogue/types';
 import { cloudinarySrcSet, cloudinaryUrl } from '@/lib/cloudinary';
 import styles from './CloudImage.module.css';
 
 interface Props {
-  asset: ManifestAsset;
+  asset: ImageAsset;
   alt: string;
   sizes: string;
   /** Fallback src width when srcset isn't used. */
@@ -16,6 +16,8 @@ interface Props {
   className?: string;
   draggable?: boolean;
   onLoad?: () => void;
+  /** 'fill' covers its box; 'natural' keeps the photo's own proportions inside it (never cropped). */
+  variant?: 'fill' | 'natural';
 }
 
 type Stage = 'transformed' | 'original' | 'failed';
@@ -38,6 +40,7 @@ export function CloudImage({
   className,
   draggable,
   onLoad,
+  variant = 'fill',
 }: Props) {
   const [stage, setStage] = useState<Stage>('transformed');
   const [loaded, setLoaded] = useState(false);
@@ -76,7 +79,7 @@ export function CloudImage({
       decoding="async"
       fetchPriority={priority ? 'high' : 'auto'}
       draggable={draggable}
-      className={`${styles.img} ${className ?? ''}`}
+      className={`${styles.img} ${variant === 'natural' ? styles.natural : ''} ${className ?? ''}`}
       data-loaded={loaded || undefined}
       onLoad={() => {
         setLoaded(true);

@@ -6,7 +6,7 @@ import { useRef } from 'react';
 import { CloudImage } from '../CloudImage';
 import { useExperience } from '../ExperienceProvider';
 import styles from './CampaignStudy.module.css';
-import { products, resolveImages, type ResolvedImage } from '@/data/products';
+import type { CatalogueImage as ResolvedImage, CatalogueProduct } from '@/lib/catalogue/types';
 import { windowRange } from '@/lib/ranges';
 
 const CHAPTERS = ['Seen first in the light.', 'Then turned, and turned again.', 'Every view, ready for a closer look.'];
@@ -16,10 +16,9 @@ const CHAPTERS = ['Seen first in the light.', 'Then turned, and turned again.', 
  * views of the same bag succeed one another under a travelling light. Only
  * real photographs are used; nothing is generated or retouched.
  */
-export function CampaignStudy() {
+export function CampaignStudy({ product }: { product: CatalogueProduct }) {
   const { reducedMotion } = useExperience();
-  const product = [...products].sort((a, b) => b.images.length - a.images.length)[0];
-  const images = resolveImages(product);
+  const images = product.images;
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] });
 
@@ -33,9 +32,9 @@ export function CampaignStudy() {
     return (
       <section ref={ref} className={styles.staticSection} aria-labelledby="study-title">
         <div className="container">
-          <p className="eyebrow">Study {product.number}</p>
+          <p className="eyebrow">A study in light</p>
           <h2 id="study-title" className={`${styles.title} display`}>
-            {product.displayName}, <em>in every view</em>
+            {product.name}, <em>in every view</em>
           </h2>
           <div className={styles.staticRow}>
             {images.map((img) => (
@@ -49,8 +48,8 @@ export function CampaignStudy() {
               </figure>
             ))}
           </div>
-          <Link href={`/shop/${product.slug}`} className={styles.link}>
-            View {product.displayName}
+          <Link href={`/products/${product.slug}`} className={styles.link}>
+            View {product.name}
           </Link>
         </div>
       </section>
@@ -64,9 +63,9 @@ export function CampaignStudy() {
         <motion.div className={styles.light} style={{ background: light }} aria-hidden="true" />
         <div className={`container ${styles.layout}`}>
           <div className={styles.text}>
-            <p className="eyebrow">Study {product.number}</p>
+            <p className="eyebrow">A study in light</p>
             <h2 id="study-title" className={`${styles.title} display`}>
-              {product.displayName}, <em>in every view</em>
+              {product.name}, <em>in every view</em>
             </h2>
             <div className={styles.chapters}>
               {CHAPTERS.slice(0, Math.max(1, n)).map((line, i) => (
@@ -80,8 +79,8 @@ export function CampaignStudy() {
                 <motion.i style={{ scaleX: barScale }} />
               </span>
             </div>
-            <Link href={`/shop/${product.slug}`} className={styles.link} transitionTypes={['nav-forward']}>
-              View {product.displayName}
+            <Link href={`/products/${product.slug}`} className={styles.link} transitionTypes={['nav-forward']}>
+              View {product.name}
               <svg viewBox="0 0 32 12" width="28" height="12" aria-hidden="true">
                 <path d="M0 6h30m0 0-5-5m5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1" />
               </svg>

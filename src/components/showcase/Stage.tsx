@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import type { StagePreset } from '@/data/products';
+import type { StagePreset } from '@/lib/catalogue/types';
 import styles from './Stage.module.css';
 
 /**

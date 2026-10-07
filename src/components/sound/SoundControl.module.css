@@ -75,6 +75,14 @@
   transform-origin: top right;
 }
 
+.panel[data-placement='up'] {
+  top: auto;
+  bottom: calc(100% + 10px);
+  right: auto;
+  left: -8px;
+  transform-origin: bottom left;
+}
+
 .switch {
   display: flex;
   align-items: center;

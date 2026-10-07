@@ -1,154 +1,113 @@
 .card {
   position: relative;
   display: grid;
-  gap: 22px;
+  gap: 16px;
   align-content: start;
 }
 
-.stageBox {
+.media {
   position: relative;
-  display: grid;
-  place-items: center;
   aspect-ratio: 4 / 5;
   overflow: hidden;
-  perspective: 1400px;
-}
-
-.card[data-size='hero'] .stageBox {
-  aspect-ratio: auto;
-  height: min(88vh, 860px);
-  min-height: 520px;
+  isolation: isolate;
 }
 
 .stage {
   position: absolute;
   inset: 0;
+  transition: transform 1.2s var(--ease-out);
 }
 
-.framePos {
-  position: relative;
-  width: 58%;
-  max-width: 420px;
-}
-
-.card[data-size='hero'] .framePos {
-  width: min(52%, 420px);
-}
-
-.card[data-size='compact'] .framePos {
-  width: 62%;
-}
-
-.quick {
+.photo {
   position: absolute;
-  z-index: 2;
-  right: 16px;
-  bottom: 16px;
-  min-height: 40px;
-  padding: 0 16px;
-  border: 1px solid color-mix(in srgb, var(--ink) 25%, transparent);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--bg) 70%, transparent);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
-  font-size: 0.74rem;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: var(--ink);
-  opacity: 0;
-  transform: translateY(6px);
+  inset: 8% 9%;
+  display: grid;
+  place-items: center;
+}
+
+.photo > * {
+  grid-area: 1 / 1;
+}
+
+/* A thin mat around the photograph itself (its real proportions). */
+.img {
+  padding: clamp(4px, 1.4%, 8px);
+  background: var(--mat);
+  box-shadow: 0 24px 40px -22px rgb(var(--shadow-rgb) / 0.55);
   transition:
-    opacity 400ms var(--ease-out),
-    transform 400ms var(--ease-out),
-    background-color 300ms;
+    opacity 600ms var(--ease-out),
+    transform 900ms var(--ease-out);
 }
 
-.card:hover .quick,
-.quick:focus-visible {
-  opacity: 1;
-  transform: none;
+.alt {
+  opacity: 0 !important;
 }
 
-.quick:hover {
-  background: var(--ink);
-  color: var(--bg);
-}
-
-@media (hover: none) {
-  .quick {
-    opacity: 1;
-    transform: none;
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .alt {
+    opacity: 1 !important;
+  }
+  .card:hover .stage {
+    transform: scale(1.03);
   }
 }
 
-.caption {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 18px;
-  row-gap: 4px;
-  align-items: baseline;
-}
-
-.number {
-  grid-row: span 3;
-  font-size: 0.74rem;
-  letter-spacing: 0.24em;
+.noImage {
+  font-size: var(--step--1);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
   color: var(--ink-muted);
 }
 
+.metaRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 8px;
+}
+
+.meta {
+  display: grid;
+  gap: 4px;
+}
+
 .name {
-  font-size: var(--step-2);
-  line-height: 1.1;
+  font-family: var(--font-display);
+  font-size: var(--step-1);
+  font-weight: 420;
+  line-height: 1.2;
 }
 
-.card[data-size='hero'] .name {
-  font-size: var(--step-3);
-}
-
-.stretched {
-  background: linear-gradient(currentColor, currentColor) 0 100% / 0 1px no-repeat;
-  transition: background-size 700ms var(--ease-out);
-}
-
-.stretched::after {
+/* The title link stretches over the whole card (one tab stop, one target). */
+.link::after {
   content: '';
   position: absolute;
   inset: 0;
   z-index: 1;
 }
 
-.card:hover .stretched,
-.stretched:focus-visible {
-  background-size: 100% 1px;
-}
-
-.stretched:focus-visible {
+.link:focus-visible {
   outline: none;
 }
 
-.card:has(.stretched:focus-visible) .stageBox {
+.card:has(.link:focus-visible) {
   outline: 1.5px solid var(--focus);
   outline-offset: 6px;
 }
 
-.tagline {
-  font-family: var(--font-display);
-  font-style: italic;
-  font-size: var(--step-1);
-  line-height: 1.3;
+.price {
+  font-size: 0.95rem;
+  letter-spacing: 0.04em;
   color: var(--ink-soft);
 }
 
-.price {
-  margin-top: 6px;
-  font-family: var(--font-display);
-  font-size: var(--step-1);
-  letter-spacing: 0.04em;
+.note {
+  font-size: var(--step--1);
+  color: var(--ink-muted);
 }
 
-.priceNote {
-  font-family: var(--font-sans);
-  font-size: 0.74rem;
-  letter-spacing: 0.12em;
-  color: var(--ink-muted);
+.wish {
+  position: relative;
+  z-index: 2;
+  margin: -8px -10px 0 0;
 }

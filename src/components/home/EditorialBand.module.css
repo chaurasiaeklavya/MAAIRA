@@ -1,0 +1,56 @@
+.band {
+  padding-block: clamp(48px, 9vh, 112px);
+  border-top: 1px solid var(--line);
+}
+
+.inner {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  gap: clamp(28px, 5vw, 80px);
+  align-items: center;
+}
+
+.media {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 5 / 4;
+  overflow: hidden;
+}
+
+.stage {
+  position: absolute;
+  inset: 0;
+}
+
+.photo {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 70%;
+  height: 84%;
+}
+
+.photo img {
+  padding: 6px;
+  background: var(--mat);
+  box-shadow: 0 30px 50px -26px rgb(var(--shadow-rgb) / 0.6);
+}
+
+.text {
+  display: grid;
+  gap: 16px;
+  justify-items: start;
+  color: var(--ink-soft);
+}
+
+.title {
+  font-size: var(--step-3);
+  color: var(--ink);
+}
+
+@media (max-width: 900px) {
+  .inner {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

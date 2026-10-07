@@ -1,7 +1,15 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 import styles from './ServiceLayout.module.css';
-import { serviceNav } from '@/data/site';
+import { legalNav } from '@/data/site';
+
+const serviceNav = [
+  { href: '/client-services', label: 'FAQs' },
+  { href: '/client-services/shipping', label: 'Shipping' },
+  { href: '/client-services/returns', label: 'Returns & refunds' },
+  { href: '/client-services/cancellation', label: 'Cancellation' },
+  ...legalNav,
+];
 
 /** Shared frame for client-service pages: section nav + readable prose column. */
 export function ServiceLayout({ current, children }: { current: string; children: ReactNode }) {
@@ -33,6 +41,12 @@ export function DraftNotice({ children }: { children?: ReactNode }) {
   );
 }
 
-export function Pending({ children = 'To be provided by Maanya Enterprises.' }: { children?: ReactNode }) {
-  return <p className={styles.pending}>{children}</p>;
+/** A visible, unmistakable gap for the business to fill — never presented as policy. */
+export function Pending({ children = 'details to be provided by Maanya Enterprises' }: { children?: ReactNode }) {
+  return (
+    <p className={styles.pending}>
+      <strong>[CLIENT TO CONFIRM</strong> — {children}
+      <strong>]</strong>
+    </p>
+  );
 }

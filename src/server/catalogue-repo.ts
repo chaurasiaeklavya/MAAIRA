@@ -8,7 +8,7 @@ import type { Database } from '../db/connect';
 import * as s from '../db/schema';
 import type { Availability, CatalogueProduct, StagePreset, Term, TermKind } from '../lib/catalogue/types';
 import { displayPrice } from '../lib/commerce/money';
-import { purchaseBlocker } from '../lib/commerce/purchasable';
+import { MAX_QUANTITY, purchaseBlocker } from '../lib/commerce/purchasable';
 
 type ProductRow = typeof s.products.$inferSelect;
 
@@ -83,6 +83,8 @@ export async function hydrate(db: Database, rows: ProductRow[]): Promise<Catalog
       price: { paise: approved ? r.pricePaise : null, approved, display: displayPrice(r.pricePaise, approved) },
       availability: r.availability as Availability,
       purchasable: purchaseBlocker(r) === null,
+      blocker: purchaseBlocker(r),
+      maxQuantity: r.trackInventory ? Math.max(0, Math.min(MAX_QUANTITY, r.stock ?? 0)) : MAX_QUANTITY,
       colour: r.colour,
       material: r.material,
       dimensions: r.dimensions,

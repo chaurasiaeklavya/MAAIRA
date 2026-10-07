@@ -46,7 +46,7 @@
 .lead {
   display: grid;
   align-content: start;
-  gap: 24px;
+  gap: 20px;
 }
 
 .lockupLink {
@@ -66,6 +66,7 @@
 
 .heading {
   margin-bottom: 16px;
+  font-family: var(--font-sans);
   font-size: 0.74rem;
   font-weight: 450;
   letter-spacing: 0.28em;
@@ -105,6 +106,7 @@
   grid-column: 1 / -1;
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   justify-content: space-between;
   gap: 12px 32px;
   padding-top: 24px;
@@ -127,4 +129,27 @@
   .cols {
     grid-template-columns: minmax(0, 1fr);
   }
+}
+
+.legalLinks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+}
+
+.legalLinks a {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+}
+
+.legalLinks a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.prefs {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }

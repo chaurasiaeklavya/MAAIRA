@@ -3,20 +3,17 @@ import '@fontsource-variable/cormorant-garamond/wght.css';
 import '@fontsource-variable/cormorant-garamond/wght-italic.css';
 import '@fontsource-variable/jost/wght.css';
 import './globals.css';
-import { Cursor } from '@/components/Cursor';
 import { ExperienceProvider } from '@/components/ExperienceProvider';
-import { Footer } from '@/components/Footer';
-import { Header } from '@/components/Header';
 import { brand } from '@/data/brand';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-// The showcase uses placeholder prices, so it stays out of search indexes until approved.
+// Placeholder prices/unconfirmed data stay out of search indexes until the client approves.
 const allowIndexing = process.env.NEXT_PUBLIC_ALLOW_INDEXING === 'true';
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
-  title: { default: `${brand.name} — ${brand.descriptor}`, template: `%s · ${brand.name}` },
-  description: `${brand.name} by ${brand.businessName}. ${brand.descriptor}. A first look at selected pieces from the house.`,
+  title: { default: `${brand.name} — Luxury bags`, template: `%s · ${brand.name}` },
+  description: `${brand.name} by ${brand.businessName}. ${brand.descriptor}. Shop bags by style and occasion.`,
   applicationName: brand.name,
   robots: allowIndexing ? { index: true, follow: true } : { index: false, follow: false },
   openGraph: {
@@ -51,12 +48,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <a className="skip-link" href="#main">
           Skip to content
         </a>
-        <ExperienceProvider>
-          <Header />
-          <main id="main">{children}</main>
-          <Footer />
-          <Cursor />
-        </ExperienceProvider>
+        <ExperienceProvider>{children}</ExperienceProvider>
       </body>
     </html>
   );

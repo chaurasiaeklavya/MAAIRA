@@ -1,4 +1,4 @@
-/** Site map shared by the header, footer, menu and sitemap. */
+/** Static site map shared by the header, footer and sitemap. Shop categories are added from live data. */
 export interface NavItem {
   href: string;
   label: string;
@@ -6,20 +6,26 @@ export interface NavItem {
 
 export const primaryNav: NavItem[] = [
   { href: '/shop', label: 'Shop' },
-  { href: '/house', label: 'The House' },
-  { href: '/editorial', label: 'Editorial' },
+  { href: '/about', label: 'About' },
   { href: '/contact', label: 'Contact' },
 ];
 
-export const serviceNav: NavItem[] = [
-  { href: '/client-services', label: 'Client services' },
-  { href: '/client-services/shipping-returns', label: 'Shipping & returns' },
-  { href: '/client-services/privacy', label: 'Privacy' },
-  { href: '/client-services/terms', label: 'Terms' },
+export const careNav: NavItem[] = [
+  { href: '/contact', label: 'Contact us' },
+  { href: '/contact?mode=callback', label: 'Request a call back' },
+  { href: '/client-services', label: 'FAQs' },
+  { href: '/client-services/shipping', label: 'Shipping' },
+  { href: '/client-services/returns', label: 'Returns & refunds' },
+  { href: '/client-services/cancellation', label: 'Cancellation' },
 ];
 
-/** Hierarchy depth used to pick a forward/back direction for page transitions. */
-export function routeDepth(pathname: string) {
-  if (pathname === '/') return 0;
-  return pathname.split('/').filter(Boolean).length;
-}
+export const aboutNav: NavItem[] = [
+  { href: '/about', label: 'About MAAIRA' },
+  { href: '/editorial', label: 'Editorial' },
+];
+
+export const legalNav: NavItem[] = [
+  { href: '/client-services/privacy', label: 'Privacy' },
+  { href: '/client-services/terms', label: 'Terms' },
+  { href: '/client-services/cookies', label: 'Cookies' },
+];

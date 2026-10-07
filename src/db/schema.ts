@@ -522,6 +522,7 @@ export const enquiries = pgTable(
     /** Snapshot of the product reference the visitor asked about. */
     productLabel: text('product_label'),
     message: text('message'),
+    preferredContact: text('preferred_contact'),
     callbackWindow: text('callback_window'),
     note: text('note'),
     consentAt: timestamp('consent_at', { withTimezone: true }).notNull(),

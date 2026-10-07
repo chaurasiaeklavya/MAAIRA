@@ -135,16 +135,6 @@ html {
   scroll-padding-top: var(--header-h);
 }
 
-html.lenis,
-html.lenis body {
-  height: auto;
-}
-.lenis.lenis-smooth {
-  scroll-behavior: auto !important;
-}
-.lenis.lenis-stopped {
-  overflow: clip;
-}
 
 body {
   margin: 0;
@@ -296,6 +286,58 @@ ol {
 .display em {
   font-style: italic;
   font-weight: 300;
+}
+
+/* Buttons — plain words first; icons only support them. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 52px;
+  padding: 0 28px;
+  border: 1px solid var(--ink);
+  font-size: 0.8rem;
+  font-weight: 450;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  text-align: center;
+  transition:
+    background-color var(--dur-fast),
+    color var(--dur-fast),
+    border-color var(--dur-fast);
+}
+.btn--primary {
+  background: var(--ink);
+  color: var(--bg);
+}
+.btn--primary:hover {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
+}
+.btn--secondary {
+  background: transparent;
+  color: var(--ink);
+}
+.btn--secondary:hover {
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+}
+.btn--block {
+  width: 100%;
+}
+.btn:disabled,
+.btn[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.text-link {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 4px;
+}
+.text-link:hover {
+  color: var(--accent);
 }
 
 /* Leather-inspired surface: base tone + tiled procedural grain. */

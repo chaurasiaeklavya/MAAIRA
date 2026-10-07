@@ -1,20 +1,23 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { adminConfigured, isAuthorised } from '@/lib/server/admin-auth';
 
 /**
- * Gate for the enquiry admin. Disabled (404) unless ADMIN_USER and
- * ADMIN_PASSWORD are configured; otherwise requires HTTP Basic auth.
- * Handlers re-check authorisation themselves (defence in depth).
+ * First gate for the admin: requests without a session cookie never reach
+ * admin pages or APIs. This is a cheap pre-check only — every admin page,
+ * server action and API handler verifies the session and role itself.
  */
 export function proxy(request: NextRequest) {
-  if (!adminConfigured()) {
-    return new NextResponse('Not found', { status: 404 });
-  }
-  if (!isAuthorised(request.headers.get('authorization'))) {
-    return new NextResponse('Authentication required', {
-      status: 401,
-      headers: { 'WWW-Authenticate': 'Basic realm="MAAIRA admin", charset="UTF-8"', 'Cache-Control': 'no-store' },
-    });
+  const { pathname } = request.nextUrl;
+  const hasSession = request.cookies.getAll().some((c) => /^(__Secure-)?maaira\.session_token$/.test(c.name));
+  const isSignIn = pathname === '/admin/sign-in';
+
+  if (!hasSession && !isSignIn) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json({ ok: false, code: 'unauthorised' }, { status: 401, headers: { 'Cache-Control': 'no-store' } });
+    }
+    const url = request.nextUrl.clone();
+    url.pathname = '/admin/sign-in';
+    url.search = '';
+    return NextResponse.redirect(url);
   }
   const res = NextResponse.next();
   res.headers.set('Cache-Control', 'no-store');
@@ -23,5 +26,5 @@ export function proxy(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/api/admin/:path*'],
+  matcher: ['/admin', '/admin/:path*', '/api/admin/:path*'],
 };

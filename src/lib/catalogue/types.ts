@@ -60,6 +60,10 @@ export interface CatalogueProduct {
   availability: Availability;
   /** True only when price, availability and stock all allow purchase. */
   purchasable: boolean;
+  /** Why it can't be bought online right now (null when purchasable). */
+  blocker: 'unpublished' | 'price-pending' | 'availability-unconfirmed' | 'out-of-stock' | null;
+  /** Largest quantity one cart line may hold (stock-aware, never above 10). */
+  maxQuantity: number;
   colour: string | null;
   material: string | null;
   dimensions: string | null;

@@ -1,106 +1,51 @@
-import { NextResponse, type NextRequest } from 'next/server';
-import { products } from '@/data/products';
+import type { NextRequest } from 'next/server';
+import { getDb } from '@/db';
 import { validateEnquiry, type EnquiryPayload } from '@/lib/enquiry/schema';
-import { notifierConfigured, notifyNewEnquiry } from '@/lib/server/notify';
-import { createRateLimiter } from '@/lib/server/rate-limit';
-import { getStore, newEnquiryId, type EnquiryRecord } from '@/lib/server/store';
+import { businessInbox, sendEmail } from '@/server/email';
+import { createEnquiry, knownProductSlugs } from '@/server/enquiries-repo';
+import { handle, HttpError, json, limit, readJson } from '@/server/http';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-const MAX_BODY_BYTES = 10_000;
-// Default: 5 requests per IP per 10 minutes (override for testing via ENQUIRY_RATE_LIMIT_MAX).
-const limiter = createRateLimiter({
-  limit: Math.max(1, Number(process.env.ENQUIRY_RATE_LIMIT_MAX) || 5),
-  windowMs: 10 * 60 * 1000,
+/**
+ * Enquiry and callback requests. Stored in Postgres (the record of truth);
+ * the business is emailed when transactional email is configured. Success is
+ * returned only after the record is committed.
+ */
+export const POST = handle('enquiries', async (req: NextRequest) => {
+  const payload = await readJson<EnquiryPayload>(req);
+  const db = getDb();
+  await limit(req, 'enquiry', Math.max(1, Number(process.env.ENQUIRY_RATE_LIMIT_MAX) || 5), 600);
+
+  const result = validateEnquiry(payload, await knownProductSlugs(db));
+  if (!result.ok) throw new HttpError(400, result.spam ? 'rejected' : 'invalid', { errors: result.errors });
+  const v = result.value;
+
+  const rec = await createEnquiry(db, v);
+  if (rec.duplicate) return json(200, { ok: true, id: rec.id, kind: rec.kind, duplicate: true });
+
+  const inbox = businessInbox();
+  if (inbox.length) {
+    await sendEmail({
+      to: inbox,
+      replyTo: v.email,
+      subject: `${v.kind === 'callback' ? 'Callback request' : 'New enquiry'} ${rec.id}${rec.productLabel ? ` — ${rec.productLabel}` : ''}`,
+      rows: [
+        ['Reference', rec.id],
+        ['Name', v.name],
+        ['Email', v.email],
+        ['Phone', v.phone],
+        ['Piece', rec.productLabel],
+        ['Preferred contact', v.preferredContact],
+        ['Preferred time', v.callbackWindow],
+        ['Message', v.message],
+      ],
+    });
+  }
+  console.info(JSON.stringify({ evt: 'enquiry_received', id: rec.id, kind: rec.kind }));
+  return json(201, { ok: true, id: rec.id, kind: rec.kind });
 });
-const PIECE_IDS = products.map((p) => p.id);
-
-const json = (status: number, body: Record<string, unknown>, headers: Record<string, string> = {}) =>
-  NextResponse.json(body, { status, headers: { 'Cache-Control': 'no-store', ...headers } });
-
-function clientKey(req: NextRequest) {
-  const fwd = req.headers.get('x-forwarded-for');
-  return (fwd?.split(',')[0] || req.headers.get('x-real-ip') || 'local').trim();
-}
-
-/** Reject cross-site posts: when an Origin is sent it must match this host. */
-function sameOrigin(req: NextRequest) {
-  const origin = req.headers.get('origin');
-  if (!origin) return true;
-  try {
-    return new URL(origin).host === (req.headers.get('x-forwarded-host') || req.headers.get('host'));
-  } catch {
-    return false;
-  }
-}
-
-export async function POST(req: NextRequest) {
-  if (!req.headers.get('content-type')?.includes('application/json')) {
-    return json(415, { ok: false, code: 'unsupported_media_type' });
-  }
-  if (!sameOrigin(req)) return json(403, { ok: false, code: 'forbidden' });
-
-  const store = getStore();
-  const notify = notifierConfigured();
-  if (!store && !notify) {
-    // Honest state: nothing would receive the request, so don't accept it.
-    return json(503, { ok: false, code: 'not_configured' });
-  }
-
-  const rate = limiter(clientKey(req));
-  if (!rate.ok) {
-    return json(429, { ok: false, code: 'rate_limited' }, { 'Retry-After': String(rate.retryAfterSeconds) });
-  }
-
-  const raw = await req.text();
-  if (raw.length > MAX_BODY_BYTES) return json(413, { ok: false, code: 'too_large' });
-  let payload: EnquiryPayload;
-  try {
-    payload = JSON.parse(raw) as EnquiryPayload;
-  } catch {
-    return json(400, { ok: false, code: 'invalid_json' });
-  }
-  if (!payload || typeof payload !== 'object') return json(400, { ok: false, code: 'invalid_json' });
-
-  const result = validateEnquiry(payload, PIECE_IDS);
-  if (!result.ok) {
-    return json(400, { ok: false, code: result.spam ? 'rejected' : 'invalid', errors: result.errors });
-  }
-  const value = result.value;
-
-  try {
-    // Idempotency: a retried submission returns the original reference.
-    if (store) {
-      const existing = await store.findByIdempotencyKey(value.idempotencyKey);
-      if (existing) return json(200, { ok: true, id: existing.id, kind: existing.kind, duplicate: true });
-    }
-
-    const piece = products.find((p) => p.id === value.pieceId);
-    const now = new Date().toISOString();
-    const record: EnquiryRecord = {
-      ...value,
-      id: newEnquiryId(value.kind),
-      createdAt: now,
-      status: 'new',
-      pieceName: piece?.displayName ?? null,
-      consentAt: now,
-    };
-
-    if (store) await store.create(record);
-    const emailed = notify ? await notifyNewEnquiry(record) : false;
-    if (!store && !emailed) {
-      // Email-only mode and the email failed: the request reached no one.
-      return json(502, { ok: false, code: 'delivery_failed' });
-    }
-
-    console.info(`[enquiry] received ${record.id} (${record.kind}) store=${store?.kind ?? 'none'} email=${emailed}`);
-    return json(201, { ok: true, id: record.id, kind: record.kind });
-  } catch (err) {
-    console.error('[enquiry] failed to record request', err instanceof Error ? err.message : 'unknown error');
-    return json(500, { ok: false, code: 'server_error' });
-  }
-}
 
 export function GET() {
   return json(405, { ok: false, code: 'method_not_allowed' }, { Allow: 'POST' });

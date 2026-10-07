@@ -4,11 +4,9 @@ import { motion, useScroll, useTransform } from 'motion/react';
 import Link from 'next/link';
 import { useRef } from 'react';
 import { useExperience } from '../ExperienceProvider';
-import { RevealText } from '../motion/RevealText';
 import { LeatherCanvas } from './LeatherCanvas';
 import styles from './Hero.module.css';
 import { brand } from '@/data/brand';
-import { products } from '@/data/products';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -24,7 +22,7 @@ export function Hero() {
 
   const rise = (delay: number) =>
     reducedMotion
-      ? { initial: { opacity: 0 }, animate: { opacity: 1 }, transition: { duration: 0.4 } }
+      ? { initial: { opacity: 0 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.4 } }
       : {
           initial: { opacity: 0, y: 18 },
           animate: { opacity: 1, y: 0 },
@@ -56,7 +54,7 @@ export function Hero() {
               initial={reducedMotion ? { opacity: 0 } : { opacity: 0, clipPath: 'inset(100% 0 0 0)' }}
               animate={
                 reducedMotion
-                  ? { opacity: 1 }
+                  ? { opacity: 1, clipPath: 'none' }
                   : { opacity: 1, clipPath: 'inset(0% 0 0 0)', transitionEnd: { clipPath: 'none' } }
               }
               transition={{ duration: 1.4, delay: 0.3, ease: [0.65, 0, 0.35, 1] }}
@@ -76,10 +74,10 @@ export function Hero() {
                 initial={reducedMotion ? { opacity: 0 } : { opacity: 0, scaleX: 1.06, filter: 'blur(8px)' }}
                 animate={
                   reducedMotion
-                    ? { opacity: 1 }
+                    ? { opacity: 1, scaleX: 1, filter: 'none' }
                     : { opacity: 1, scaleX: 1, filter: 'blur(0px)', transitionEnd: { filter: 'none' } }
                 }
-                transition={{ duration: 1.6, delay: 1.25, ease: EASE }}
+                transition={{ duration: 1.2, delay: 0.35, ease: EASE }}
                 aria-hidden="true"
               >
                 <span className={styles.wordmarkShadow}>
@@ -92,43 +90,26 @@ export function Hero() {
         </div>
 
         <motion.div className={styles.lower} style={reducedMotion ? undefined : { y: contentY, opacity: contentOpacity }}>
-          <motion.div className={styles.intro} {...rise(1.7)}>
+          <motion.div className={styles.intro} {...rise(0.3)}>
             <p className={styles.descriptor}>{brand.descriptor}</p>
-            <Link href="/shop" className={styles.presenting}>
-              <span className={styles.presentingDot} aria-hidden="true" />
-              Now presenting · {products.length} pieces from the house
-            </Link>
           </motion.div>
 
           <div className={styles.pitch}>
-            <RevealText as="p" className={`${styles.tagline} display`} trigger="mount" delay={1.8}>
-              {'Quiet luxury, *reimagined.*'}
-            </RevealText>
-            <motion.div className={styles.ctas} {...rise(2.15)}>
-              <Link href="/shop" className={styles.cta} transitionTypes={['nav-forward']}>
-                <span>Explore the pieces</span>
-                <svg viewBox="0 0 32 12" width="28" height="12" aria-hidden="true">
-                  <path d="M0 6h30m0 0-5-5m5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1" />
-                </svg>
+            <motion.p className={`${styles.tagline} display`} {...rise(0.4)}>
+              Luxury bags, <em>made to be carried.</em>
+            </motion.p>
+            <motion.div className={styles.ctas} {...rise(0.5)}>
+              <Link href="/shop" className="btn btn--primary">
+                Shop bags
               </Link>
-              <Link href="/house" className={styles.ctaGhost} transitionTypes={['nav-forward']}>
-                The House
+              <Link href="/about" className={styles.ctaGhost}>
+                Our story
               </Link>
             </motion.div>
           </div>
         </motion.div>
       </div>
 
-      <motion.div
-        className={styles.scrollCue}
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 2.4, duration: 1 }}
-        aria-hidden="true"
-      >
-        <span>Scroll</span>
-        <i />
-      </motion.div>
     </section>
   );
 }

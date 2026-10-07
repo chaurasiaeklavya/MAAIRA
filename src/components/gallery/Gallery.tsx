@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'motion/react';
 import { CloudImage } from '../CloudImage';
 import styles from './Gallery.module.css';
 import type { GalleryState } from './useGallery';
-import type { ResolvedImage } from '@/data/products';
+import type { CatalogueImage as ResolvedImage } from '@/lib/catalogue/types';
 import { cursorLabel } from '@/lib/cursor-store';
 
 const EASE = [0.22, 1, 0.36, 1] as const;
@@ -50,7 +50,7 @@ export function GalleryPhoto({
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: 0.7, ease: EASE }}
+            transition={{ duration: 0.45, ease: EASE }}
             drag={images.length > 1 && !gallery.canZoom ? 'x' : false}
             dragConstraints={{ left: 0, right: 0 }}
             dragElastic={0.18}

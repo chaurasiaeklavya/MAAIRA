@@ -30,6 +30,8 @@ export function fixture(over: Partial<CatalogueProduct> & { termIds?: string[] }
     price: { paise, approved: paise !== null, display: paise ? `₹${paise / 100}` : '₹XXXX' },
     availability: 'unconfirmed',
     purchasable: false,
+    blocker: 'price-pending',
+    maxQuantity: 10,
     colour: null,
     material: null,
     dimensions: null,

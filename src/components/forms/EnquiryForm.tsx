@@ -6,7 +6,6 @@ import { useEffect, useId, useRef, useState } from 'react';
 import { useExperience } from '../ExperienceProvider';
 import styles from './EnquiryForm.module.css';
 import { brand, enquiryMailto } from '@/data/brand';
-import { products } from '@/data/products';
 import {
   CALLBACK_WINDOWS,
   LIMITS,
@@ -22,7 +21,6 @@ type Status =
   | { state: 'error'; message: string }
   | { state: 'unavailable'; mailto: string };
 
-const PIECE_IDS = products.map((p) => p.id);
 const newKey = () =>
   typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
@@ -35,17 +33,29 @@ const newKey = () =>
  * configured or reachable, it says so and offers email and phone instead —
  * keeping what the visitor typed.
  */
+export interface PieceOption {
+  slug: string;
+  name: string;
+}
+
 export function EnquiryForm({
+  pieces,
   initialMode = 'enquiry',
   defaultPieceId,
+  defaultMessage,
   allowModeSwitch = true,
   headingId,
 }: {
+  /** Published pieces offered in the "Piece" select (value = product slug). */
+  pieces: PieceOption[];
   initialMode?: EnquiryKind;
+  /** Product slug to preselect. */
   defaultPieceId?: string;
+  defaultMessage?: string;
   allowModeSwitch?: boolean;
   headingId?: string;
 }) {
+  const PIECE_IDS = pieces.map((p) => p.slug);
   const { play, scrollTo } = useExperience();
   const uid = useId();
   const [mode, setMode] = useState<EnquiryKind>(initialMode);
@@ -95,18 +105,18 @@ export function EnquiryForm({
 
   function mailtoFromForm() {
     const v = readForm();
-    const piece = products.find((p) => p.id === v.pieceId);
+    const piece = pieces.find((p) => p.slug === v.pieceId);
     const lines = [
       `Name: ${v.name ?? ''}`,
       v.email ? `Email: ${v.email}` : '',
       v.phone ? `Phone: ${v.phone}` : '',
-      piece ? `Piece: ${piece.displayName}` : '',
+      piece ? `Piece: ${piece.name}` : '',
       mode === 'callback' && v.callbackWindow ? `Preferred time for a call: ${v.callbackWindow}` : '',
       '',
       String(v.message ?? ''),
     ].filter((l, i) => l || i === 5);
     return enquiryMailto(
-      `${mode === 'callback' ? 'Callback request' : 'Enquiry'}${piece ? ` — ${piece.displayName}` : ''} | ${brand.name}`,
+      `${mode === 'callback' ? 'Callback request' : 'Enquiry'}${piece ? ` — ${piece.name}` : ''} | ${brand.name}`,
       lines.join('\n'),
     );
   }
@@ -254,9 +264,9 @@ export function EnquiryForm({
         <Field label="Piece" name="pieceId" id={id('pieceId')} error={errors.pieceId} hint={mode === 'callback' ? 'Optional' : undefined}>
           <select id={id('pieceId')} name="pieceId" defaultValue={defaultPieceId ?? 'general'} {...err('pieceId')}>
             <option value="general">General enquiry</option>
-            {products.map((p) => (
-              <option key={p.id} value={p.id}>
-                {p.displayName}
+            {pieces.map((p) => (
+              <option key={p.slug} value={p.slug}>
+                {p.name}
               </option>
             ))}
           </select>
@@ -322,6 +332,7 @@ export function EnquiryForm({
               rows={mode === 'callback' ? 3 : 5}
               maxLength={mode === 'callback' ? LIMITS.note.max : LIMITS.message.max}
               required={mode === 'enquiry'}
+              defaultValue={mode === 'enquiry' ? defaultMessage : undefined}
               {...err('message')}
             />
           </Field>

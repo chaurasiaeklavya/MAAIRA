@@ -10,6 +10,15 @@
   opacity: 1;
 }
 
+/* Photo at its own aspect ratio, fitted inside the box — never cropped. */
+.natural {
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+
 .fallback {
   display: grid;
   place-items: center;

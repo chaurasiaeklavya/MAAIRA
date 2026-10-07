@@ -1,6 +1,6 @@
 'use client';
 
-import { motion, useScroll, useTransform } from 'motion/react';
+import { motion, useInView, useScroll, useTransform } from 'motion/react';
 import Link from 'next/link';
 import { useRef } from 'react';
 import { useExperience } from './ExperienceProvider';
@@ -14,6 +14,8 @@ const STATEMENT = ['An object of', 'quiet confidence —', 'designed to be carri
 /** Brand introduction with the client-supplied credentials. `teaser` adds a link to the full House page. */
 export function House({ teaser = false }: { teaser?: boolean }) {
   const { reducedMotion } = useExperience();
+  const statementRef = useRef<HTMLHeadingElement>(null);
+  const statementInView = useInView(statementRef, { once: true, margin: '0px 0px -10% 0px' });
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const watermarkY = useTransform(scrollYProgress, [0, 1], [80, -80]);
@@ -29,14 +31,13 @@ export function House({ teaser = false }: { teaser?: boolean }) {
       <div className={`container ${styles.grid}`}>
         <div className={styles.lead}>
           <p className="eyebrow">The House</p>
-          <h2 id="house-title" className={`${styles.statement} display`}>
+          <h2 ref={statementRef} id="house-title" className={`${styles.statement} display`}>
             {STATEMENT.map((line, i) => (
               <span key={line} className={styles.lineMask}>
                 <motion.span
                   className={styles.line}
                   initial={reducedMotion ? { opacity: 0 } : { y: '105%' }}
-                  whileInView={reducedMotion ? { opacity: 1 } : { y: '0%' }}
-                  viewport={{ once: true, margin: '-10% 0px' }}
+                  animate={statementInView ? { opacity: 1, y: '0%' } : reducedMotion ? { opacity: 0 } : { y: '105%' }}
                   transition={{ duration: 1.2, delay: i * 0.09, ease: EASE }}
                 >
                   {i === 1 ? (
@@ -62,12 +63,9 @@ export function House({ teaser = false }: { teaser?: boolean }) {
           <p>
             <strong>{brand.name}</strong> is a {brand.descriptor.toLowerCase()}, operated by {brand.businessName}.
           </p>
-          <p>
-            This edition offers a first look at selected pieces from the house — an invitation to the collection that
-            follows.
-          </p>
+          <p>Explore the collection online, or ask the house about any piece — by message, by phone or with a call back.</p>
           {teaser && (
-            <Link href="/house" className={styles.more} transitionTypes={['nav-forward']}>
+            <Link href="/about" className={styles.more}>
               Discover the house
               <svg viewBox="0 0 32 12" width="28" height="12" aria-hidden="true">
                 <path d="M0 6h30m0 0-5-5m5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1" />
@@ -82,7 +80,7 @@ export function House({ teaser = false }: { teaser?: boolean }) {
               key={c.id}
               className={`${styles.tag} leather stitched`}
               initial={reducedMotion ? { opacity: 0 } : { opacity: 0, y: 40, rotateX: 18 }}
-              whileInView={reducedMotion ? { opacity: 1 } : { opacity: 1, y: 0, rotateX: 0 }}
+              whileInView={{ opacity: 1, y: 0, rotateX: 0 }}
               viewport={{ once: true, margin: '-10% 0px' }}
               transition={{ duration: 1.2, delay: 0.15 + i * 0.12, ease: EASE }}
             >

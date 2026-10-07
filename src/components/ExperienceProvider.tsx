@@ -1,6 +1,5 @@
 'use client';
 
-import Lenis from 'lenis';
 import { MotionConfig } from 'motion/react';
 import { usePathname } from 'next/navigation';
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
@@ -15,7 +14,7 @@ interface Experience {
   toggleTheme: (origin?: { x: number; y: number }) => void;
   play: (name: Cue) => void;
   reducedMotion: boolean;
-  /** Pause/resume smooth scrolling (e.g. while a dialog is open). */
+  /** Lock page scrolling (e.g. while a full-screen layer is open). */
   lockScroll: (locked: boolean) => void;
   scrollTo: (target: string | HTMLElement | number) => void;
 }
@@ -33,7 +32,6 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
   // Hydration-safe: server and first client render agree on `false`, then sync.
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
   const [theme, setTheme] = useState<Theme>('dark');
-  const lenisRef = useRef<Lenis | null>(null);
   const pathname = usePathname();
   const lastPath = useRef(pathname);
 
@@ -44,15 +42,10 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
     hydrateSoundPreferences();
   }, []);
 
-  // Route change: resync smooth scrolling with the new page and play the page cue.
+  // Route change: play the (optional) page cue.
   useEffect(() => {
     if (lastPath.current === pathname) return;
     lastPath.current = pathname;
-    const lenis = lenisRef.current;
-    if (lenis) {
-      lenis.resize();
-      if (!window.location.hash) lenis.scrollTo(0, { immediate: true, force: true });
-    }
     play('page');
   }, [pathname]);
 
@@ -72,22 +65,6 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
   }, []);
-
-  // Smooth scrolling — desktop wheel only; touch keeps native momentum.
-  useEffect(() => {
-    if (reducedMotion) return;
-    const lenis = new Lenis({
-      autoRaf: true,
-      lerp: 0.085,
-      smoothWheel: true,
-      anchors: { offset: -64 },
-    });
-    lenisRef.current = lenis;
-    return () => {
-      lenis.destroy();
-      lenisRef.current = null;
-    };
-  }, [reducedMotion]);
 
   const toggleTheme = useCallback(
     (origin?: { x: number; y: number }) => {
@@ -127,16 +104,12 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
     [reducedMotion],
   );
 
-
   const lockScroll = useCallback((locked: boolean) => {
-    const lenis = lenisRef.current;
     if (locked) {
-      lenis?.stop();
       const sbw = window.innerWidth - document.documentElement.clientWidth;
       document.documentElement.style.setProperty('--scrollbar-comp', `${sbw}px`);
       document.documentElement.classList.add('is-locked');
     } else {
-      lenis?.start();
       document.documentElement.classList.remove('is-locked');
       document.documentElement.style.removeProperty('--scrollbar-comp');
     }
@@ -144,13 +117,8 @@ export function ExperienceProvider({ children }: { children: ReactNode }) {
 
   const scrollTo = useCallback(
     (target: string | HTMLElement | number) => {
-      // Elements land just below the fixed header, with or without Lenis.
+      // Elements land just below the fixed header.
       const offset = typeof target === 'number' ? 0 : -96;
-      const lenis = lenisRef.current;
-      if (lenis) {
-        lenis.scrollTo(target, { offset, duration: 1.4 });
-        return;
-      }
       const el = typeof target === 'number' ? null : typeof target === 'string' ? document.querySelector(target) : target;
       if (typeof target !== 'number' && !el) return;
       const top = el ? window.scrollY + el.getBoundingClientRect().top + offset : (target as number);

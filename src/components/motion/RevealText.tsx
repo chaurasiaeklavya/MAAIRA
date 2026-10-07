@@ -1,7 +1,7 @@
 'use client';
 
-import { motion } from 'motion/react';
-import { Fragment, type ElementType } from 'react';
+import { motion, useInView } from 'motion/react';
+import { Fragment, useRef, type ElementType } from 'react';
 import { useExperience } from '../ExperienceProvider';
 import styles from './RevealText.module.css';
 
@@ -34,15 +34,17 @@ export function RevealText({
   const segments = children.split(/(\*[^*]+\*)/g).filter(Boolean);
   let i = 0;
 
-  const animate = { y: '0%', opacity: 1 };
-  const initial = reducedMotion ? { opacity: 0 } : { y: '108%', opacity: 1 };
-  const play =
-    trigger === 'mount'
-      ? { initial, animate }
-      : { initial, whileInView: animate, viewport: { once: true, margin: '-8% 0px' } };
+  // Visibility is observed on the heading itself: each word starts clipped
+  // by its mask, so observing the words would never report them in view.
+  const ref = useRef<HTMLElement>(null);
+  const inView = useInView(ref, { once: true, margin: '0px 0px -8% 0px' });
+  const shown = trigger === 'mount' || inView;
+  const visible = { y: '0%', opacity: 1 };
+  const hidden = reducedMotion ? { y: '0%', opacity: 0 } : { y: '108%', opacity: 1 };
+  const play = { initial: hidden, animate: shown ? visible : hidden };
 
   return (
-    <Tag className={className} id={id}>
+    <Tag ref={ref} className={className} id={id}>
       {segments.map((seg, s) => {
         const italic = seg.startsWith('*') && seg.endsWith('*');
         const words = (italic ? seg.slice(1, -1) : seg).split(/(\s+)/);

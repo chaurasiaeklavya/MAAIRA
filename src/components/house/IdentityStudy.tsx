@@ -10,7 +10,7 @@ export function IdentityStudy() {
   const { reducedMotion } = useExperience();
   const reveal = (delay: number) => ({
     initial: reducedMotion ? { opacity: 0 } : { opacity: 0, clipPath: 'inset(0 0 100% 0)' },
-    whileInView: reducedMotion ? { opacity: 1 } : { opacity: 1, clipPath: 'inset(0 0 0% 0)' },
+    whileInView: reducedMotion ? { opacity: 1, clipPath: 'inset(0 0 0% 0)' } : { opacity: 1, clipPath: 'inset(0 0 0% 0)' },
     viewport: { once: true, margin: '-15% 0px' },
     transition: { duration: 1.3, delay, ease: [0.65, 0, 0.35, 1] as const },
   });

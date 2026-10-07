@@ -15,7 +15,7 @@ export default function NotFound() {
           Return home
         </Link>
         <Link href="/shop" className={styles.secondary}>
-          View the pieces
+          Shop all bags
         </Link>
       </div>
     </section>

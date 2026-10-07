@@ -10,7 +10,7 @@ import { ambienceIsRecorded, play, setSound, soundStore } from '@/lib/sound/engi
  * an on/off switch, an optional ambience switch and a volume slider.
  * Sound is always off until the visitor turns it on.
  */
-export function SoundControl() {
+export function SoundControl({ placement = 'down' }: { placement?: 'down' | 'up' }) {
   const state = useSyncExternalStore(soundStore.subscribe, soundStore.get, soundStore.getServer);
   const [open, setOpen] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
@@ -68,6 +68,7 @@ export function SoundControl() {
             ref={panelRef}
             id={panelId}
             className={styles.panel}
+            data-placement={placement}
             role="group"
             aria-label="Sound settings"
             initial={{ opacity: 0, y: -8, scale: 0.98 }}

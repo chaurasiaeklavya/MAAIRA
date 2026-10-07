@@ -8,13 +8,13 @@ import { useExperience } from '../ExperienceProvider';
 import { RevealText } from '../motion/RevealText';
 import { Stage } from '../showcase/Stage';
 import styles from './EditorialStudies.module.css';
-import { products, resolveImages, type Product, type ResolvedImage } from '@/data/products';
+import type { CatalogueImage as ResolvedImage, CatalogueProduct as Product } from '@/lib/catalogue/types';
 
 /**
  * Campaign-style studies composed only from the house's own photographs.
  * Each piece gets a distinct composition; nothing is generated or retouched.
  */
-export function EditorialStudies() {
+export function EditorialStudies({ products }: { products: Product[] }) {
   const [a, b, c] = products;
   return (
     <>
@@ -37,14 +37,14 @@ function StudyText({ product, numeral, title, line }: { product: Product; numera
   return (
     <div className={styles.text}>
       <p className={styles.kicker}>
-        Study {numeral} · {product.number}
+        Study {numeral}
       </p>
       <RevealText as="h2" className={`${styles.title} display`}>
         {title}
       </RevealText>
       <p className={styles.line}>{line}</p>
-      <Link href={`/shop/${product.slug}`} className={styles.link} transitionTypes={['nav-forward']}>
-        View {product.displayName}
+      <Link href={`/products/${product.slug}`} className={styles.link}>
+        View {product.name}
         <svg viewBox="0 0 32 12" width="28" height="12" aria-hidden="true">
           <path d="M0 6h30m0 0-5-5m5 5-5 5" fill="none" stroke="currentColor" strokeWidth="1" />
         </svg>
@@ -59,11 +59,11 @@ function PresenceStudy({ product, numeral }: { product: Product; numeral: string
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const numY = useTransform(scrollYProgress, [0, 1], [120, -120]);
   const frameY = useTransform(scrollYProgress, [0, 1], [80, -40]);
-  const images = resolveImages(product);
+  const images = product.images;
   return (
     <section ref={ref} className={`${styles.study} ${styles.presence} leather`} aria-label={`Study ${numeral}`}>
       <motion.span className={`${styles.bigNum} display`} style={reducedMotion ? undefined : { y: numY }} aria-hidden="true">
-        {product.number.replace('Nº ', '')}
+        {numeral}
       </motion.span>
       <div className={`container ${styles.presenceGrid}`}>
         <StudyText product={product} numeral={numeral} title="A study in *presence*" line="One piece, given the whole room." />
@@ -80,7 +80,7 @@ function FormStudy({ product, numeral }: { product: Product; numeral: string }) 
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const speeds = [useTransform(scrollYProgress, [0, 1], [90, -90]), useTransform(scrollYProgress, [0, 1], [0, 0]), useTransform(scrollYProgress, [0, 1], [-60, 120])];
-  const images = resolveImages(product);
+  const images = product.images;
   return (
     <section ref={ref} className={`${styles.study} ${styles.form}`} aria-label={`Study ${numeral}`}>
       <div className="container">
@@ -106,7 +106,7 @@ function ContrastStudy({ product, numeral }: { product: Product; numeral: string
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end start'] });
   const beamX = useTransform(scrollYProgress, [0, 1], ['-30%', '60%']);
   const insetY = useTransform(scrollYProgress, [0, 1], [60, -60]);
-  const images = resolveImages(product);
+  const images = product.images;
   return (
     <section ref={ref} className={`${styles.study} ${styles.contrast}`} aria-label={`Study ${numeral}`}>
       <div className={`${styles.contrastDark} leather`}>

@@ -1,9 +1,21 @@
 import Link from 'next/link';
-import styles from './Footer.module.css';
+import type { NavData } from './Header';
+import { SoundControl } from './sound/SoundControl';
 import { brand } from '@/data/brand';
-import { primaryNav, serviceNav } from '@/data/site';
+import { aboutNav, careNav, legalNav } from '@/data/site';
+import styles from './Footer.module.css';
 
-export function Footer() {
+export function Footer({ nav }: { nav: NavData }) {
+  const shop = [
+    { href: '/shop', label: 'Shop all bags' },
+    ...(nav.hasArrivals ? [{ href: '/new-arrivals', label: 'New arrivals' }] : []),
+    ...[...nav.styles, ...nav.occasions].slice(0, 6).map((c) => ({ href: `/shop/${c.slug}`, label: c.label })),
+  ];
+  const cols = [
+    { title: 'Shop', items: shop },
+    { title: 'Customer care', items: careNav },
+    { title: 'About', items: aboutNav },
+  ];
   return (
     <footer className={styles.footer}>
       <div className={`${styles.band} leather`} aria-hidden="true">
@@ -19,56 +31,52 @@ export function Footer() {
             {brand.descriptor}.
             <br />A brand of {brand.businessName}.
           </p>
+          <ul className={styles.links}>
+            <li>
+              <a href={brand.contact.phoneHref}>{brand.contact.phoneDisplay}</a>
+            </li>
+            <li>
+              <a href={`mailto:${brand.contact.email}`}>{brand.contact.email}</a>
+            </li>
+            <li>
+              <a href={brand.contact.instagramUrl} target="_blank" rel="noopener noreferrer">
+                Instagram {brand.contact.instagramHandle}
+                <span className="visually-hidden"> (opens in a new tab)</span>
+              </a>
+            </li>
+          </ul>
         </div>
 
         <nav className={styles.cols} aria-label="Footer">
-          <div>
-            <p className={styles.heading}>The house</p>
-            <ul className={styles.links}>
-              <li>
-                <Link href="/">Home</Link>
-              </li>
-              {primaryNav.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href}>{item.label}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className={styles.heading}>Client services</p>
-            <ul className={styles.links}>
-              {serviceNav.map((item) => (
-                <li key={item.href}>
-                  <Link href={item.href}>{item.label}</Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-          <div>
-            <p className={styles.heading}>Contact</p>
-            <ul className={styles.links}>
-              <li>
-                <a href={`mailto:${brand.contact.email}`}>{brand.contact.email}</a>
-              </li>
-              <li>
-                <a href={brand.contact.phoneHref}>{brand.contact.phoneDisplay}</a>
-              </li>
-              <li>
-                <a href={brand.contact.instagramUrl} target="_blank" rel="noopener noreferrer">
-                  Instagram {brand.contact.instagramHandle}
-                  <span className="visually-hidden"> (opens in a new tab)</span>
-                </a>
-              </li>
-            </ul>
-          </div>
+          {cols.map((c) => (
+            <div key={c.title}>
+              <h2 className={styles.heading}>{c.title}</h2>
+              <ul className={styles.links}>
+                {c.items.map((item) => (
+                  <li key={item.href}>
+                    <Link href={item.href}>{item.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </nav>
 
         <div className={styles.legal}>
           <p>
             © {new Date().getFullYear()} {brand.businessName}. All rights reserved.
           </p>
-          <p>Preview edition — prices shown as ₹XXXX are placeholders; product details are to be confirmed.</p>
+          <ul className={styles.legalLinks}>
+            {legalNav.map((item) => (
+              <li key={item.href}>
+                <Link href={item.href}>{item.label}</Link>
+              </li>
+            ))}
+          </ul>
+          <div className={styles.prefs}>
+            <span>Sound</span>
+            <SoundControl placement="up" />
+          </div>
         </div>
       </div>
     </footer>

@@ -209,7 +209,7 @@ export interface VerifiedPayment {
  * Applies a provider-verified payment to its order. Idempotent: repeating
  * the same payment (browser + webhook, or webhook retries) is a no-op.
  */
-export async function applyVerifiedPayment(db: Database, payment: VerifiedPayment): Promise<{ orderId: string; number: string; status: OrderStatus }> {
+export async function applyVerifiedPayment(db: Database, payment: VerifiedPayment): Promise<{ orderId: string; number: string; status: OrderStatus; changed: boolean }> {
   return db.transaction(async (tx) => {
     const [order] = await tx.select().from(s.orders).where(eq(s.orders.providerOrderId, payment.providerOrderId)).for('update');
     if (!order) throw new OrderError('not_found', 'Order not found for this payment.');
@@ -238,20 +238,20 @@ export async function applyVerifiedPayment(db: Database, payment: VerifiedPaymen
         await recordEvent(tx, order.id, current, current, 'provider', payment.paymentId, 'Amount/currency mismatch — not marked paid');
         throw new OrderError('mismatch', 'Payment amount does not match the order.');
       }
-      if (current === 'paid' || !canTransition(current, 'paid', 'provider')) return { orderId: order.id, number: order.number, status: current };
+      if (current === 'paid' || !canTransition(current, 'paid', 'provider')) return { orderId: order.id, number: order.number, status: current, changed: false };
       await tx.update(s.orders).set({ status: 'paid', paidAt: new Date(), expiresAt: null }).where(eq(s.orders.id, order.id));
       await recordEvent(tx, order.id, current, 'paid', 'provider', payment.paymentId, 'Payment captured and verified');
       if (order.sourceCartId) await clearCart(tx, order.sourceCartId);
-      return { orderId: order.id, number: order.number, status: 'paid' };
+      return { orderId: order.id, number: order.number, status: 'paid', changed: true };
     }
 
     if (payment.status === 'failed' && canTransition(current, 'payment_failed', 'provider')) {
       await tx.update(s.orders).set({ status: 'payment_failed' }).where(eq(s.orders.id, order.id));
       await recordEvent(tx, order.id, current, 'payment_failed', 'provider', payment.paymentId, payment.errorDescription ?? 'Payment failed');
-      return { orderId: order.id, number: order.number, status: 'payment_failed' };
+      return { orderId: order.id, number: order.number, status: 'payment_failed', changed: true };
     }
     // 'authorized' (awaiting capture) or a late failure after success: state unchanged.
-    return { orderId: order.id, number: order.number, status: current };
+    return { orderId: order.id, number: order.number, status: current, changed: false };
   });
 }
 
