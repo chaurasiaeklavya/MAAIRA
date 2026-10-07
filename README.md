@@ -27,6 +27,7 @@ Requires Node 22.6+ and PostgreSQL 14+.
 | `npm run test:e2e` | End-to-end purchase journey, accounts, admin and security probes against a production build and the test database (`npm run build` first) |
 | `npm run qa:screens -- --mock-images` | Responsive/visual sweep 360 → 1920 px, both themes, reduced motion |
 | `npm run qa:a11y -- --staff=email:password` | axe-core WCAG 2.2 A/AA audit of storefront, dialogs and admin |
+| `npm run build:preview` | One self-contained HTML file of the storefront (`dist/maaira-store-preview.html`) captured from the running store, for sharing or offline review — see below |
 | `npm run db:generate` · `db:migrate` · `db:seed` | Schema migrations and seed import |
 | `npm run staff:create` | Create or promote a staff/admin account |
 | `npm run assets:brand` | Regenerate logo masks, icons and leather textures |
@@ -51,6 +52,12 @@ Architecture, data model and deployment: `docs/architecture.md`.
 5. Create the first admin with `npm run staff:create`, review `/admin/settings`, then complete the catalogue in `/admin/media`.
 
 Nothing has been deployed from this environment (no hosting, DNS or provider credentials).
+
+## Offline preview file
+
+`npm run build:preview` (with the store running, e.g. `npm run build && npm start`) writes **`dist/maaira-store-preview.html`**: every public page in one file that opens from disk with no server — styles, fonts, textures and logos inlined. Pages are captured from the real app, so the file always reflects the current catalogue and copy.
+
+In the file: page navigation, dark/light theme, menu, search and cart dialogs, photo galleries, accordions and the enquiry/callback form modes work. Anything that needs the server (cart, checkout, accounts, search, wishlist, sending enquiries) says so; the enquiry form offers to email the visitor's details instead. Product photographs stay Cloudinary URLs, so they need a connection (without one, the brand panel is shown). The builder checks the result offline before finishing.
 
 ## Documentation
 
